@@ -47,15 +47,16 @@ jobs:
     #   with:
     #     python-version: ${{ matrix.python }}
 
+    # This shouldn't be required? I think instead we just have to select the python version to use inside the image. 
     # Python dependencies
-    - name: Install python dependencies
-      run: |
-        # apt-get install python3-venv
-        python3 -m pip install --upgrade wheel
-        python3 -m pip install --upgrade 'setuptools; python_version >= "3.6"' 'setuptools<51.3.0; python_version < "3.6" and python_version >= "3.0"'
+    # - name: Install python dependencies
+    #   run: |
+    #     apt-get install python3-venv
+    #     python3 -m pip install --upgrade wheel
+    #     python3 -m pip install --upgrade 'setuptools; python_version >= "3.6"' 'setuptools<51.3.0; python_version < "3.6" and python_version >= "3.0"'
 
     - name: Configure cmake
-      run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DBUILD_TESTS=${{ env.build_tests }} -DCMAKE_WARN_DEPRECATED=OFF -DBUILD_SWIG_PYTHON=${{ env.build_swig_python }}
+      run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DBUILD_TESTS=${{ env.build_tests }} -DCMAKE_WARN_DEPRECATED=OFF -DBUILD_SWIG_PYTHON=${{ env.build_swig_python }} 
 
     - name: Build static library
       working-directory: ${{ env.build_dir }}
