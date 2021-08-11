@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  wheels-linux:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
