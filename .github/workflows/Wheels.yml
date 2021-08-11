@@ -40,11 +40,12 @@ jobs:
     #     echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
     #     echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
 
+    # Can't use this on the image, mixing glibc versions. Need to use the versions already in the image? 
     # Enable a specific python version
-    - name: Select Python version
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python }}
+    # - name: Select Python version
+    #   uses: actions/setup-python@v2
+    #   with:
+    #     python-version: ${{ matrix.python }}
 
     # Python dependencies
     - name: Install python dependencies
