@@ -11,7 +11,11 @@ jobs:
   wheels-linux:
     runs-on: ${{ matrix.os }}
     container:
-      image: quay.io/pypa/manylinux2014_x86_64
+      # manylinux2014 is centos based. Needs different dependency installation instructions. This *will* include cuda.
+      # image: quay.io/pypa/manylinux2014_x86_64
+      # manylinux2_24 is debian based, so the current deb based instructions should work?
+      image: quay.io/pypa/manylinux_2_24_x86_64
+
     strategy:
       fail-fast: false
       # explicit include-based build matrix, of known valid options
