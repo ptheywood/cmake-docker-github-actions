@@ -64,7 +64,7 @@ jobs:
     - name: Find wheels
       id: findwheel
       run: |
-        path=$(find ${{ env.build_dir }}/lib/${{ matrix.config }}/python/dist/ -name "*.whl" | head -n 1)
+        path=$(find ${{ env.build_dir }}/lib/${{ env.config }}/python/dist/ -name "*.whl" | head -n 1)
         echo "path: ${path}"
         echo "::set-output name=path::${path}"
         echo "::set-output name=file::$(basename ${path})"
