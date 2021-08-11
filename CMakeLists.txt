@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION VERSION 3.18 FATAL_ERROR)
+include(CMakeDependentOption)
 
 project(cmake-docker-github-actions LANGUAGES CXX)
 
@@ -22,9 +23,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "Control the output of compi
 # CMake Options.
 option(BUILD_TESTS "Enable building tests" OFF)
 option(BUILD_SWIG_PYTHON "Enable python bindings via SWIG" OFF)
+cmake_dependent_option(BUILD_SWIG_PYTHON_VENV "Enable the use of a venv for swig/python installation" ON "BUILD_SWIG_PYTHON" ON)
+
 
 add_subdirectory(src "${PROJECT_BINARY_DIR}/cdga")
 
 if(BUILD_TESTS)
     add_subdirectory(tests)
+endif()
+
+if(BUILD_SWIG_PYTHON)
+    add_subdirectory(swig)
 endif()

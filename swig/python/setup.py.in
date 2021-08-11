@@ -1,0 +1,35 @@
+from setuptools import find_packages, setup
+from setuptools.dist import Distribution
+
+class BinaryDistribution(Distribution):
+  def is_pure(self):
+    return False
+  def has_ext_modules(self):
+    return True
+
+from setuptools.command.install import install
+class InstallPlatlib(install):
+    def finalize_options(self):
+        install.finalize_options(self)
+        self.install_lib=self.install_platlib
+
+setup(
+  name='@PYTHON_MODULE_NAME@',
+  version='@CDGA_VERSION_PYTHON_PUBLIC@',
+  author='Peter Heywood',
+  url='https://github.com/ptheywood/cmake-docker-github-actions',
+  distclass=BinaryDistribution,
+  cmdclass={'install': InstallPlatlib},
+  packages=find_packages(),
+  include_package_data=True,
+  classifiers=[
+  'License :: OSI Approved :: MIT License',
+  'Operating System :: POSIX :: Linux',
+  'Operating System :: Microsoft :: Windows',
+  'Programming Language :: Python',
+  'Programming Language :: C++',
+  ],
+  package_data={
+  '@PYTHON_MODULE_NAME@':['$<TARGET_FILE_NAME:@PYTHON_MODULE_NAME@>'],
+  },
+)

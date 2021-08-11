@@ -1,0 +1,4 @@
+import sys, os;
+# Normal module stuff
+__all__ = ["@PYTHON_MODULE_NAME@"]
+from .@PYTHON_MODULE_NAME@ import *
