@@ -1,0 +1,80 @@
+# Compile project on Ubuntu
+name: Wheels
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      # explicit include-based build matrix, of known valid options
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            gcc: 9
+            python: "3.7"
+    env:
+      build_dir: "build"
+      config: "Release"
+      build_tests: "ON"
+      build_swig_python: "ON"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Specify the correct host compilers
+    - name: Install/Select gcc and g++ 
+      run: |
+        sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
+        echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
+        echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+
+    # Enable a specific python version
+    - name: Select Python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+
+    # Python dependencies
+    - name: Install python dependencies
+      run: |
+        sudo apt-get install python3-venv
+        python3 -m pip install --upgrade wheel
+        python3 -m pip install --upgrade 'setuptools; python_version >= "3.6"' 'setuptools<51.3.0; python_version < "3.6" and python_version >= "3.0"'
+
+    - name: Configure cmake
+      run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DBUILD_TESTS=${{ env.build_tests }} -DCMAKE_WARN_DEPRECATED=OFF -DBUILD_SWIG_PYTHON=${{ env.build_swig_python }}
+
+    - name: Build static library
+      working-directory: ${{ env.build_dir }}
+      run: cmake --build . --target cdga --verbose -j `nproc`
+
+    - name: Build python wheel
+      working-directory: ${{ env.build_dir }}
+      run: cmake --build . --target pycdga --verbose -j `nproc`
+
+  
+
+    # Extract the path and name of the first (and only) python wheel
+    - name: Find wheels
+      id: findwheel
+      run: |
+        path=$(find ${{ env.build_dir }}/lib/${{ matrix.config }}/python/dist/ -name "*.whl" | head -n 1)
+        echo "path: ${path}"
+        echo "::set-output name=path::${path}"
+        echo "::set-output name=file::$(basename ${path})"
+
+
+    # If required, upload the .whl file as an artifact for use in dependent jobs
+    - name: Upload Wheel Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheelhouse
+        path: ${{ steps.findwheel.outputs.path }}
+        if-no-files-found: error
+        retention-days: 7
