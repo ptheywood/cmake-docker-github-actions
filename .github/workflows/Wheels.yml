@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
-            gcc: 9
+            # gcc: 9
             python: "3.7"
     env:
       build_dir: "build"
@@ -34,11 +34,11 @@ jobs:
     - uses: actions/checkout@v2
 
     # Specify the correct host compilers
-    - name: Install/Select gcc and g++ 
-      run: |
-        apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
-        echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
-        echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+    # - name: Install/Select gcc and g++ 
+    #   run: |
+    #     apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
+    #     echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
+    #     echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
 
     # Enable a specific python version
     - name: Select Python version
