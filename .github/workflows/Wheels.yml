@@ -67,9 +67,9 @@ jobs:
       working-directory: ${{ env.build_dir }}
       run: cmake --build . --target pycdga --verbose -j `nproc`
 
-    - name: Run auduitwheel show
+    - name: Run auditwheel show
       working-directory: ${{ env.build_dir }}
-      run: audithweel show lib/${{ env.config }}/python/dist/*whl
+      run: auditwheel show lib/${{ env.config }}/python/dist/*whl
 
     - name: Run auditwheel repair, renaming the wheel 
       working-directory: ${{ env.build_dir }}
