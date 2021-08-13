@@ -28,6 +28,7 @@ setup(
   'Operating System :: Microsoft :: Windows',
   'Programming Language :: Python',
   'Programming Language :: C++',
+  'Environment :: GPU :: NVIDIA CUDA :: @CMAKE_CUDA_COMPILER_VERSION_MAJOR@.@CMAKE_CUDA_COMPILER_VERSION_MINOR@',
   ],
   package_data={
   '@PYTHON_MODULE_NAME@':['$<TARGET_FILE_NAME:@PYTHON_MODULE_NAME@>'],

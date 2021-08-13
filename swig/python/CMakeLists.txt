@@ -48,7 +48,7 @@ swig_add_library(${PYTHON_MODULE_NAME}
 	SOURCES ${SWIG_INPUT_FILE_NAME}.i)
 
 # configure wrapper code to build with cuda compiler
-# set_source_files_properties(${PYTHON_LIB_TEMP_DIRECTORY}/${PYTHON_MODULE_NAME}/${SWIG_INPUT_FILE_NAME}PYTHON_wrap.cxx PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(${PYTHON_LIB_TEMP_DIRECTORY}/${PYTHON_MODULE_NAME}/${SWIG_INPUT_FILE_NAME}PYTHON_wrap.cxx PROPERTIES LANGUAGE CUDA)
 
 # use the target include directories
 set_property(TARGET ${PYTHON_MODULE_NAME} PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON)
@@ -78,7 +78,7 @@ endif()
 
 
 target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cdga)
-# target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cuda)
+target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cuda)
 if(MSVC)
   target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE ${Python3_LIBRARIES})
 endif()
@@ -106,9 +106,9 @@ endif()
 
 
 # Get the cuda major and minor versions as required for setup.py. There is no easy cmake way to access this that is supported across multiple CMake versions..
-# string(REPLACE "." ";" CMAKE_CUDA_COMPILER_VERSION_LIST ${CMAKE_CUDA_COMPILER_VERSION})
-# list(GET CMAKE_CUDA_COMPILER_VERSION_LIST 0 CMAKE_CUDA_COMPILER_VERSION_MAJOR)
-# list(GET CMAKE_CUDA_COMPILER_VERSION_LIST 1 CMAKE_CUDA_COMPILER_VERSION_MINOR)
+string(REPLACE "." ";" CMAKE_CUDA_COMPILER_VERSION_LIST ${CMAKE_CUDA_COMPILER_VERSION})
+list(GET CMAKE_CUDA_COMPILER_VERSION_LIST 0 CMAKE_CUDA_COMPILER_VERSION_MAJOR)
+list(GET CMAKE_CUDA_COMPILER_VERSION_LIST 1 CMAKE_CUDA_COMPILER_VERSION_MINOR)
 
 
 # configure the python setup.py and __init__.py files for packaging and output to the final lib output folder
@@ -116,10 +116,10 @@ configure_file(
 	setup.py.in
 	${PYTHON_LIB_TEMP_DIRECTORY}/setup.py.in
 	@ONLY)
-# unset(CMAKE_CUDA_COMPILER_VERSION_LIST)
-# unset(CMAKE_CUDA_COMPILER_VERSION_MAJOR)
-# unset(CMAKE_CUDA_COMPILER_VERSION_MINOR)
-# unset(FLAMEGPU_PYTHON_PACKAGE_DATA_OS_SPECIFIC)
+unset(CMAKE_CUDA_COMPILER_VERSION_LIST)
+unset(CMAKE_CUDA_COMPILER_VERSION_MAJOR)
+unset(CMAKE_CUDA_COMPILER_VERSION_MINOR)
+unset(FLAMEGPU_PYTHON_PACKAGE_DATA_OS_SPECIFIC)
 
 file(GENERATE
 	OUTPUT ${PYTHON_LIB_OUTPUT_DIRECTORY}/setup.py

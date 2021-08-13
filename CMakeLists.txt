@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION VERSION 3.18 FATAL_ERROR)
 include(CMakeDependentOption)
 
-project(cmake-docker-github-actions LANGUAGES CXX)
+project(cmake-docker-github-actions LANGUAGES CXX CUDA)
 
 # Set the defualt CMAKE BUILD TYPE to Release (for make-like generators)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)

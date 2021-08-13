@@ -17,6 +17,10 @@ jobs:
         include:
           - os: ubuntu-20.04
             gcc: 9
+            cuda: 11.4
+          - os: ubuntu-18.04
+            gcc: 8
+            cuda: 10.2
     env:
       build_dir: "build"
       config: "Release"
@@ -25,6 +29,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install CUDA
+      if: ${{ startswith(matrix.os, 'ubuntu') }}
+      shell: bash
+      run: .github/scripts/install_cuda_ubuntu.sh
+      env:
+        cuda: ${{ matrix.cuda }}
 
     # Specify the correct host compilers
     - name: Install/Select gcc and g++ 
@@ -57,12 +68,12 @@ jobs:
       if: env.build_tests == 'ON'
       run: cmake --build . --target tests --verbose -j `nproc`
 
-    - name: Run the c++ tests
-      working-directory: ${{ env.build_dir }}
-      run: ./bin/${{ env.config }}/tests
+    # - name: Run the c++ tests
+    #   working-directory: ${{ env.build_dir }}
+    #   run: ./bin/${{ env.config }}/tests
 
-    - name: Run the python tests
-      working-directory: ${{ env.build_dir }}
-      run: |
-        source ./lib/${{ env.config }}/python/venv/bin/activate
-        python3 ../tests/swig/python/tests.py
+    # - name: Run the python tests
+    #   working-directory: ${{ env.build_dir }}
+    #   run: |
+    #     source ./lib/${{ env.config }}/python/venv/bin/activate
+    #     python3 ../tests/swig/python/tests.py

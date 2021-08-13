@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION VERSION 3.18 FATAL_ERROR)
 
-project(tests CXX)
+project(tests CXX CUDA)
 
 set(SRC
-    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/main.cu
 )
 
 add_executable(${PROJECT_NAME} ${SRC})

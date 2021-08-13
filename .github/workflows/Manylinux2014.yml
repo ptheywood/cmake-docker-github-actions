@@ -1,0 +1,91 @@
+# Build manylinux wheels, and upload them to the build for testing within a short timeframe
+name: manylinux2014
+
+# Run on branch push events (i.e. not tag pushes) and on pull requests
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+# A single job, which builds manylinux2014 wheels, which ships with GCC 10.2.1 at the time of writing. If this bumps to unpatched 10.3 we might have issues w/ cuda. 
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    container:
+      image: quay.io/pypa/manylinux2014_x86_64
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.9"
+            cuda: 11.2
+          - python: "3.8"
+            cuda: 11.2
+          # - python: "3.7"
+            # cuda: 11.2
+          # - python: "3.6"
+            # cuda: 11.2
+    env:
+      build_dir: "build"
+      config: "Release"
+      build_tests: "OFF"
+      build_swig_python: "ON"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Install CUDA into the image.
+    - name: Install CUDA (centos)
+      shell: bash
+      run: .github/scripts/install_cuda_centos.sh
+      env:
+        cuda: ${{ matrix.cuda }}
+
+    # Configure CMake, specifying the correct python version
+    - name: Configure cmake
+      run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DBUILD_TESTS=${{ env.build_tests }} -DCMAKE_WARN_DEPRECATED=OFF -DBUILD_SWIG_PYTHON=${{ env.build_swig_python }} -DPYTHON3_EXACT_VERSION=${{ matrix.python }}
+
+    # Build the python wheel
+    - name: Build Wheel
+      if: ${{ env.build_swig_python == 'ON' }}
+      working-directory: ${{ env.build_dir }}
+      run: cmake --build . --target pycdga --verbose -j `nproc`
+
+    # Run audithweel show for information, but do not repair.
+    - name: Run auditwheel show
+      working-directory: ${{ env.build_dir }}
+      run: auditwheel show lib/${{ env.config }}/python/dist/*whl
+
+    # Ideally we should use auditwheel repair to check/enforce conformity
+    # But we cannot due to cuda shared object dependencies which we cannot/shouldnot/willnot package into the wheel. 
+    # - name: Run auditwheel repair
+    #   working-directory: ${{ env.build_dir }}
+    #   run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.config }}/python/dist/*whl -w wheelhouse
+
+    # Instead, rename the wheel.
+    # Wheels are not strictly manylinux complaint due to libcuda.so.
+    - name: Mock auditwheel repair
+      shell: bash
+      run: |
+        wheelhouse=${{ env.build_dir }}/wheelhouse
+        mkdir -p ${wheelhouse}
+        wheels_in=$(find ${{ env.build_dir }}/lib/${{ env.config }}/python/dist/ -name "*.whl")
+        for wheel_path in ${wheels_in}; do
+          wheel_dir=$(dirname "${wheel_path}")
+          wheel_name=$(basename "${wheel_path}")
+          wheel_name_out="${wheel_name//linux/manylinux2014}"
+          wheel_path_out="${wheelhouse}/${wheel_name_out}"
+          # Copy the wheel, renaming it
+          cp ${wheel_path} ${wheel_path_out}
+          echo "copied ${wheel_path} to ${wheel_path_out}"
+        done
+
+    # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
+    - name: Upload Wheel Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheelhouse
+        path: ${{ env.build_dir }}/wheelhouse/*.whl
+        if-no-files-found: error
+        retention-days: 7
