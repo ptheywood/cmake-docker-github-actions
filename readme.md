@@ -54,3 +54,29 @@ To run the c++ python "test suite" for the `Release` config:
 source lib/Release/python/venv/bin/activate
 python3 ../tests/swig/python/tests.py
 ```
+
+## Manylinux2014 notes
+
+Some notes related to interactively running manylinux2014 locally, during investigations:
+
+```bash
+# Pull the image 
+docker pull quay.io/pypa/manylinux2014_x86_64
+# Run bash inside the image, mounting this directory. 
+docker run -it --mount type=bind,source="$(pwd)",target=/app quay.io/pypa/manylinux2014_x86_64 bash
+# Put the correct python on the path before configuring, or specify PYTHON3_EXACT_VERSION
+PATH=/opt/python/cp-38-cp38/bin:$PATH
+# Create a build dir in the image, but not in the mounted drive
+mkdir -p /build && cd build
+cmake /app -DBUILD_TESTS=ON -DBUILD_SWIG_PYTHON=ON -DPYTHON3_EXACT_VERSION=
+cmake --build . --target all -j 4
+```
+
+### CMake finding Python.
+
+CMake doesn't find python very well inside the image, and needs some hinting.
+
+CMake < 3.18 only has a single `Development` Python3 requirement, but this is not fully included in manylinux to keep file size low, by stripping parts of the development packages required for python development rather than python package development.
+CMake 3.18 introduced `Development.Module` instead which should work inside many linux.
+
+It seems to already ship with correct swig probably not suprising..
