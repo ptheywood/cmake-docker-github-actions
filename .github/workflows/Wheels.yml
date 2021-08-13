@@ -28,7 +28,7 @@ jobs:
       build_dir: "build"
       config: "Release"
       build_tests: "ON"
-      build_swig_python: "OFF"
+      build_swig_python: "ON"
 
     steps:
     - uses: actions/checkout@v2
@@ -63,6 +63,7 @@ jobs:
       run: cmake --build . --target cdga --verbose -j `nproc`
 
     - name: Build python wheel
+      if: ${{ env.build_swig_python == 'ON' }}
       working-directory: ${{ env.build_dir }}
       run: cmake --build . --target pycdga --verbose -j `nproc`
 
