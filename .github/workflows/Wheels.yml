@@ -8,22 +8,23 @@ on:
   pull_request:
 
 jobs:
-  wheels-linux:
-    runs-on: ${{ matrix.os }}
+  manylinux2014:
+    runs-on: ubuntu-20.04
     container:
-      # manylinux2014 is centos based. Needs different dependency installation instructions. This *will* include cuda.
+      # manylinux2014 ships with GCC 10, and is viable. manylinux 2010 has gcc 8.3, so it would probably work but is about to be EOL. manylinux_2_24 has gcc 6 so is not viable.
       image: quay.io/pypa/manylinux2014_x86_64
-      # manylinux2_24 is debian based, so the current deb based instructions should work?
-      # image: quay.io/pypa/manylinux_2_24_x86_64
+
 
     strategy:
       fail-fast: false
-      # explicit include-based build matrix, of known valid options
+      # explicit include-based build matrix, of known valid options.
+      # Greatly reduced compared to other CI due to limitations of manylinux.
       matrix:
         include:
-          - os: ubuntu-20.04
-            # gcc: 9
-            python: "3.7"
+          - python: "3.6"
+          - python: "3.7"
+          - python: "3.8"
+          - python: "3.9"
     env:
       build_dir: "build"
       config: "Release"
@@ -33,64 +34,29 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Specify the correct host compilers
-    # - name: Install/Select gcc and g++ 
-    #   run: |
-    #     apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
-    #     echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
-    #     echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
-
-    # Can't use this on the image, mixing glibc versions. Need to use the versions already in the image? 
-    # Enable a specific python version
-    # - name: Select Python version
-    #   uses: actions/setup-python@v2
-    #   with:
-    #     python-version: ${{ matrix.python }}
-
-    # This shouldn't be required? I think instead we just have to select the python version to use inside the image. 
-    # Python dependencies
-    # - name: Install python dependencies
-    #   run: |
-    #     apt-get install python3-venv
-    #     python3 -m pip install --upgrade wheel
-    #     python3 -m pip install --upgrade 'setuptools; python_version >= "3.6"' 'setuptools<51.3.0; python_version < "3.6" and python_version >= "3.0"'
+    - name: Install CUDA
+      run: echo "@todo"
 
     - name: Configure cmake
       run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DBUILD_TESTS=${{ env.build_tests }} -DCMAKE_WARN_DEPRECATED=OFF -DBUILD_SWIG_PYTHON=${{ env.build_swig_python }} -DPYTHON3_EXACT_VERSION=${{ matrix.python }}
 
-    - name: Build static library
-      working-directory: ${{ env.build_dir }}
-      run: cmake --build . --target cdga --verbose -j `nproc`
-
-    - name: Build python wheel
+    - name: Build Wheel
       if: ${{ env.build_swig_python == 'ON' }}
       working-directory: ${{ env.build_dir }}
       run: cmake --build . --target pycdga --verbose -j `nproc`
 
-    - name: Run auditwheel show
+    - name: auditwheel show
       working-directory: ${{ env.build_dir }}
       run: auditwheel show lib/${{ env.config }}/python/dist/*whl
 
-    - name: Run auditwheel repair, renaming the wheel 
+    - name: auditwheel repair
       working-directory: ${{ env.build_dir }}
       run: auditwheel repair lib/${{ env.config }}/python/dist/*whl -w wheelhouse
 
-
-    # Extract the path and name of the first (and only) python wheel
-    - name: Find wheels
-      id: findwheel
-      run: |
-        path=$(find ${{ env.build_dir }}/wheelhouse -name "*.whl" | head -n 1)
-        echo "path: ${path}"
-        echo "::set-output name=path::${path}"
-        echo "::set-output name=file::$(basename ${path})"
-
-
-    # If required, upload the .whl file as an artifact for use in dependent jobs
     - name: Upload Wheel Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: wheelhouse
-        path: ${{ steps.findwheel.outputs.path }}
+        path: ${{ env.build_dir }}/wheelhouse/*.whl
         if-no-files-found: error
         retention-days: 7
