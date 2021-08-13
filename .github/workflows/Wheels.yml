@@ -67,18 +67,20 @@ jobs:
       working-directory: ${{ env.build_dir }}
       run: cmake --build . --target pycdga --verbose -j `nproc`
 
-    # - name: Run auditwheel repair
-    #   working-directory: ${{ env.build_dir }}
-    #   run: |
-    #     mkdir -p lib/${{ env.config }}/python/dist/manywheel
-    #     auditwheel repair lib/${{ env.config }}/python/dist/*whl -w lib/${{ env.config }}/python/dist/manywheel/
+    - name: Run auduitwheel show
+      working-directory: ${{ env.build_dir }}
+      run: audithweel show lib/${{ env.config }}/python/dist/*whl
+
+    - name: Run auditwheel repair, renaming the wheel 
+      working-directory: ${{ env.build_dir }}
+      run: auditwheel repair lib/${{ env.config }}/python/dist/*whl -w wheelhouse
 
 
     # Extract the path and name of the first (and only) python wheel
     - name: Find wheels
       id: findwheel
       run: |
-        path=$(find ${{ env.build_dir }}/lib/${{ env.config }}/python/dist/manywheel -name "*.whl" | head -n 1)
+        path=$(find ${{ env.build_dir }}/wheelhouse -name "*.whl" | head -n 1)
         echo "path: ${path}"
         echo "::set-output name=path::${path}"
         echo "::set-output name=file::$(basename ${path})"
