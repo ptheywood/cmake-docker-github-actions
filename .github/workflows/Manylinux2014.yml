@@ -70,8 +70,11 @@ jobs:
     - name: Install RHEL devtoolset 
       shell: bash
       run: |
+        # This is way too aggy. @todo
+        rm -rf /opt/rh/devtoolset-10/
+        # Install devtoolset-9 
         yum install -y devtoolset-9
-        source scl_source enable devtoolset-9 bash
+        source scl_source enable devtoolset-9
         echo "PATH=${PATH}" >> $GITHUB_PATH
         echo "CC=$(which gcc)" >> $GITHUB_ENV
         echo "CXX=$(which g++)" >> $GITHUB_ENV
