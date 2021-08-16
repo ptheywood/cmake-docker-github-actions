@@ -18,18 +18,43 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: "3.9"
-            cuda: 11.2
-            cuda_arch: "52"
-          - python: "3.8"
-            cuda: 11.2
-            cuda_arch: "52"
+          # - python: "3.9"
+          #   cuda: 11.2
+          #   cuda_arch: "52"
+          # - python: "3.8"
+          #   cuda: 11.2
+          #   cuda_arch: "52"
           # - python: "3.7"
             # cuda: 11.2
             # cuda_arch: "52"
           # - python: "3.6"
             # cuda: 11.2
             # cuda_arch: "52"
+
+          - python: "3.8"
+            cuda: 11.4
+            cuda_arch: "52"
+          - python: "3.8"
+            cuda: 11.3
+            cuda_arch: "52"
+          - python: "3.8"
+            cuda: 11.2
+            cuda_arch: "52"
+          - python: "3.8"
+            cuda: 11.1
+            cuda_arch: "52"
+          - python: "3.8"
+            cuda: 11.0
+            cuda_arch: "52"
+          - python: "3.8"
+            cuda: 10.2
+            cuda_arch: "52"
+          - python: "3.8"
+            cuda: 10.1
+            cuda_arch: "52"
+          - python: "3.8"
+            cuda: 10.0
+            cuda_arch: "52"
     env:
       BUILD_DIR: "build"
       CONFIG: "Release"
