@@ -77,12 +77,13 @@ jobs:
         echo "$PATH"
         echo "$LD_LIBRARY_PATH"
         which gcc
-        # source scl_source enable devtoolset-9
+        scl enable devtoolset-9 bash
+        echo "PATH=${PATH}" >> $GITHUB_ENV
+        # echo "PATH=${PATH//devtoolset-10/devtoolset-9}" >> $GITHUB_ENV
+        echo "CC=$(which gcc)" >> $GITHUB_ENV
+        echo "CXX=$(which g++)" >> $GITHUB_ENV
+        echo "CUDAHOSTCXX=$(which g++)" >> $GITHUB_ENV
 
-        
-        echo "PATH=${PATH//devtoolset-10/devtoolset-9}" >> $GITHUB_ENV
-        # echo "CC=$(which gcc)" >> $GITHUB_ENV
-        # echo "CXX=$(which g++)" >> $GITHUB_ENV
 
     # Install CUDA into the image.
     - name: Install CUDA (centos)
