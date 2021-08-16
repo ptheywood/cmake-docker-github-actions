@@ -12,8 +12,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container:
-      image: quay.io/pypa/manylinux2010_x86_64
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +61,8 @@ jobs:
       VISUALISATION: "OFF"
 
     steps:
-    - uses: actions/checkout@v2
+    # Have to use @v1 not @v2 if using manylinux 2010 based images. 
+    - uses: actions/checkout@v1
 
     # Install CUDA into the image.
     - name: Install CUDA (centos)
@@ -141,8 +140,9 @@ jobs:
         done
 
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
+    # V1 required for manylinux2010/centos6 based images.
     - name: Upload Wheel Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v1
       with:
         name: wheelhouse
         path: ${{ env.BUILD_DIR }}/wheelhouse/*.whl
