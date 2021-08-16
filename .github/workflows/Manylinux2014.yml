@@ -74,8 +74,13 @@ jobs:
         rm -rf /opt/rh/devtoolset-10/
         # Install devtoolset-9 
         yum install -y devtoolset-9
-        source scl_source enable devtoolset-9
-        # echo "PATH=${PATH}" >> $GITHUB_PATH
+        echo "$PATH"
+        echo "$LD_LIBRARY_PATH"
+        which gcc
+        # source scl_source enable devtoolset-9
+
+        
+        echo "PATH=${PATH//devtoolset-10/devtoolset-9}" >> $GITHUB_ENV
         # echo "CC=$(which gcc)" >> $GITHUB_ENV
         # echo "CXX=$(which g++)" >> $GITHUB_ENV
 
