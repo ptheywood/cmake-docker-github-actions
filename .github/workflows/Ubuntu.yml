@@ -23,8 +23,32 @@ jobs:
             cuda: "11.4"
             cuda_arch: "52"
             gcc: 9
+          - os: ubuntu-20.04
+            cuda: "11.3"
+            cuda_arch: "52"
+            gcc: 9
+          - os: ubuntu-20.04
+            cuda: "11.2"
+            cuda_arch: "52"
+            gcc: 9
+          - os: ubuntu-20.04
+            cuda: "11.1"
+            cuda_arch: "52"
+            gcc: 9
+          - os: ubuntu-20.04
+            cuda: "11.0"
+            cuda_arch: "52"
+            gcc: 9
           - os: ubuntu-18.04
             cuda: "10.2"
+            cuda_arch: "52"
+            gcc: 8
+          - os: ubuntu-18.04
+            cuda: "10.1"
+            cuda_arch: "52"
+            gcc: 8
+          - os: ubuntu-18.04
+            cuda: "10.0"
             cuda_arch: "52"
             gcc: 8
     env:
