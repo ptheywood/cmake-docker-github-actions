@@ -1,5 +1,5 @@
 # Build manylinux wheels, and upload them to the build for testing within a short timeframe
-name: Manylinux2014
+name: Manylinux2010
 
 # Run on branch push events (i.e. not tag pushes) and on pull requests
 on:
@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     container:
-      image: quay.io/pypa/manylinux2014_x86_64
+      image: quay.io/pypa/manylinux2010_x86_64
     strategy:
       fail-fast: false
       matrix:
@@ -116,7 +116,7 @@ jobs:
         for wheel_path in ${wheels_in}; do
           wheel_dir=$(dirname "${wheel_path}")
           wheel_name=$(basename "${wheel_path}")
-          wheel_name_out="${wheel_name//linux/manylinux2014}"
+          wheel_name_out="${wheel_name//linux/manylinux2010}"
           wheel_path_out="${wheelhouse}/${wheel_name_out}"
           # Copy the wheel, renaming it
           cp ${wheel_path} ${wheel_path_out}
