@@ -1,0 +1,404 @@
+# Perform thorough builds, and potentially create a draft CI workflow. 
+name: Draft Release
+
+on:
+  # Trigger on pushes to matching tags.
+  push:
+    tags:
+      - 'v*.*.*'
+  # Or trigger on manual dispatch. This will not produce a release, but will perform the thorough build. 
+  workflow_dispatch:
+
+defaults:
+  run:
+    # Default to using bash regardless of OS unless otherwise specified.
+    shell: bash
+
+# @todo - add a job which validates the version is of the correct format (for pre releases) and that the git tag matches the CMake/header version(s) 
+
+# Several jobs with some dependencies between them.
+# + Thorough Ubuntu builds
+# + Thorough Windows builds
+# + Wheel producing manylinux builds
+# + Wheel producing Windows builds
+# + Draft github release workflow.
+jobs:
+  # Thorough Ubuntu builds.
+  build-ubuntu:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Try a range of supported CUDA versions, with all supported SMs.
+          - os: ubuntu-20.04
+            cuda: "11.4"
+            cuda_arch: "35 52 60 70 80"
+            gcc: 9
+          # Ubuntu 18.04 for CUDA 10.x 
+          - os: ubuntu-18.04
+            cuda: "10.0"
+            cuda_arch: "35 52 60 70 80"
+            gcc: 7
+    env:
+      BUILD_DIR: "build"
+      CONFIG: "Release"
+      SEATBELT: "ON"
+      BUILD_TESTS: "ON"
+      VISUALISATION: "ON"
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install CUDA
+      if: ${{ startswith(matrix.os, 'ubuntu') }}
+      shell: bash
+      env:
+        cuda: ${{ matrix.cuda }}
+      run: .github/scripts/install_cuda_ubuntu.sh
+
+    - name: Install/Select gcc and g++ 
+      run: |
+        sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
+        echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
+        echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+
+    - name: Install python dependencies
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
+      run: |
+        sudo apt-get install python3-venv
+        python3 -m pip install --upgrade wheel
+        python3 -m pip install --upgrade 'setuptools; python_version >= "3.6"' 'setuptools<51.3.0; python_version < "3.6" and python_version >= "3.0"'
+
+    - name: Configure cmake
+      run: >
+        cmake . -B "${{ env.BUILD_DIR }}"
+        -DCMAKE_BUILD_TYPE=${{ env.CONFIG }}
+        -DCMAKE_WARN_DEPRECATED=OFF 
+        -DCUDA_ARCH="${{ matrix.cuda_arch }}" 
+        -DBUILD_TESTS="${{ env.BUILD_TESTS }}" 
+        -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}"
+
+    - name: Build static library
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target cdga --verbose -j `nproc`
+
+    - name: Build python wheel
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target pycdga --verbose -j `nproc`
+
+    - name: Build tests
+      if: ${{ env.BUILD_TESTS == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target tests --verbose -j `nproc`
+
+    - name: Build all remaining targets
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target all --verbose -j `nproc`
+
+
+  # Thorough Windows builds
+  build-windows:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2019
+            cuda: "11.4.1"
+            cuda_arch: "35 52 60 70 80"
+            visual_studio: "Visual Studio 16 2019"
+    env:
+      BUILD_DIR: "build"
+      CONFIG: "Release"
+      SEATBELT: "ON"
+      BUILD_TESTS: "ON"
+      VISUALISATION: "ON"
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install CUDA
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      env:
+        cuda: ${{ matrix.cuda }}
+        visual_studio: ${{ matrix.visual_studio }}
+      run: .github\scripts\install_cuda_windows.ps1
+
+    - name: Configure cmake
+      run: >
+        cmake . -B "${{ env.BUILD_DIR }}" 
+        -G "${{ matrix.visual_studio }}" -A x64 
+        -DCMAKE_WARN_DEPRECATED=OFF 
+        -DCUDA_ARCH="${{ matrix.cuda_arch }}" 
+        -DBUILD_TESTS="${{ env.BUILD_TESTS }}" 
+        -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}" 
+        -DPython3_ROOT_DIR="$(dirname $(which python))" 
+        -DPython3_EXECUTABLE="$(which python)"
+
+    - name: Build static library
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target cdga --verbose -j `nproc`
+
+    - name: Build python wheel
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target pycdga --verbose -j `nproc`
+
+    - name: Build tests
+      if: ${{ env.BUILD_TESTS == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target tests --verbose -j `nproc`
+
+    - name: Build all remaining targets
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target ALL_BUILD --verbose -j `nproc`
+
+
+  # Manylinux2014 Wheel builds, using the manylinux2014 container
+  wheel-manylinux2014:
+    runs-on: ubuntu-20.04
+    container:
+      image: quay.io/pypa/manylinux2014_x86_64
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # @todo - python 3.6-3.9
+          # @todo - cuda 11.0
+          - python: "3.8"
+            cuda: "11.2"
+            cuda_arch: "35 52 60 70 80"
+            VISUALISATION: "ON"
+          - python: "3.8"
+            cuda: "11.2"
+            cuda_arch: "35 52 60 70 80"
+            VISUALISATION: "OFF"
+    env:
+      BUILD_DIR: "build"
+      CONFIG: "Release"
+      SEATBELT: "ON"
+      BUILD_TESTS: "OFF"
+      BUILD_SWIG_PYTHON: "ON"
+    steps:
+    - uses: actions/checkout@v2
+
+    # Install CUDA into the image.
+    - name: Install CUDA (centos)
+      shell: bash
+      env:
+        cuda: ${{ matrix.cuda }}
+      run: .github/scripts/install_cuda_centos.sh
+
+    # Configure CMake, specifying the correct python version
+    - name: Configure cmake
+      run: >
+        cmake . -B "${{ env.BUILD_DIR }}" 
+        -DCMAKE_BUILD_TYPE=${{ env.CONFIG }} 
+        -DCMAKE_WARN_DEPRECATED=OFF 
+        -DCUDA_ARCH="${{ matrix.cuda_arch }}" 
+        -DBUILD_TESTS="${{ env.BUILD_TESTS }}" 
+        -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}" 
+        -DPYTHON3_EXACT_VERSION=${{ matrix.python }}
+
+    # Build the python wheel
+    - name: Build Wheel
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target pycdga --verbose -j `nproc`
+
+    - name: Build tests
+      if: ${{ env.BUILD_TESTS == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target tests --verbose -j `nproc`
+
+    # Run audithweel show for information, but do not repair.
+    - name: Run auditwheel show
+      working-directory: ${{ env.BUILD_DIR }}
+      run: auditwheel show lib/${{ env.CONFIG }}/python/dist/*whl
+
+    # Ideally we should use auditwheel repair to check/enforce conformity
+    # But we cannot due to cuda shared object dependencies which we cannot/shouldnot/willnot package into the wheel. 
+    # - name: Run auditwheel repair
+    #   working-directory: ${{ env.BUILD_DIR }}
+    #   run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.CONFIG }}/python/dist/*whl -w wheelhouse
+
+    # Instead, rename the wheel.
+    # Wheels are not strictly manylinux complaint due to libcuda.so.
+    - name: Mock auditwheel repair
+      shell: bash
+      run: |
+        wheelhouse=${{ env.BUILD_DIR }}/wheelhouse
+        mkdir -p ${wheelhouse}
+        wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
+        for wheel_path in ${wheels_in}; do
+          wheel_name=$(basename "${wheel_path}")
+          wheel_name_out="${wheel_name//linux/manylinux2014}"
+          wheel_path_out="${wheelhouse}/${wheel_name_out}"
+          # Copy the wheel, renaming it
+          cp ${wheel_path} ${wheel_path_out}
+          echo "Copied ${wheel_path} to ${wheel_path_out}"
+        done
+
+    # Rename the wheel if VISUALISATION=OFF. 
+    # @todo - long term this should be handeled more gracefully within the python packaging during cmake.
+    - name: Rename console-only wheels
+      if: ${{ matrix.VISUALISATION == 'OFF' }}
+      run: |
+        wheelhouse=${{ env.BUILD_DIR }}/wheelhouse
+        wheels_in=$(find ${wheelhouse} -name "*.whl")
+        for wheel_path in ${wheels_in}; do
+          wheel_dir=$(dirname "${wheel_path}")
+          wheel_name=$(basename "${wheel_path}")
+          wheel_name_out="${wheel_name//pycdga/pycdga-console}"
+          wheel_path_out="${wheel_dir}/${wheel_name_out}"
+          # Move the wheel, renaming it
+          mv ${wheel_path} ${wheel_path_out}
+          echo "Moved ${wheel_path} to ${wheel_path_out}"
+        done
+
+    # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
+    - name: Upload Wheel Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheelhouse
+        path: ${{ env.BUILD_DIR }}/wheelhouse/*.whl
+        if-no-files-found: error
+        retention-days: 7
+
+
+  # Windows Wheel builds
+  wheel-windows:
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # @todo - python 3.6-3.9
+          - python: "3.8"
+            cuda: "11.0.3"
+            cuda_arch: "35 52 60 70 80"
+            visual_studio: "Visual Studio 16 2019"
+            VISUALISATION: "ON"
+    env:
+      BUILD_DIR: "build"
+      CONFIG: "Release"
+      SEATBELTS: "ON"
+      BUILD_TESTS: "OFF"
+      BUILD_SWIG_PYTHON: "ON"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Enable a specific python version
+    - name: Select Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+
+    - name: Install CUDA (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      env:
+        cuda: ${{ matrix.cuda }}
+        visual_studio: ${{ matrix.visual_studio }}
+      run: .github\scripts\install_cuda_windows.ps1
+
+    - name: Configure cmake
+      run: >
+        cmake . -B "${{ env.BUILD_DIR }}" 
+        -G "${{ matrix.visual_studio }}" -A x64 
+        -DCMAKE_WARN_DEPRECATED=OFF 
+        -DCUDA_ARCH="${{ matrix.cuda_arch }}" 
+        -DBUILD_TESTS="${{ env.BUILD_TESTS }}" 
+        -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}" 
+        -DPython3_ROOT_DIR="$(dirname $(which python))" 
+        -DPython3_EXECUTABLE="$(which python)"
+
+    - name: Build static library
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target cdga --verbose -j `nproc`
+
+    - name: Build python wheel
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target pycdga --verbose -j `nproc`
+
+    - name: Build tests
+      if: ${{ env.BUILD_TESTS == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target tests --verbose -j `nproc`
+
+    # Rename the wheel if VISUALISATION=OFF. 
+    # @todo - long term this should be handeled more gracefully within the python packaging during cmake.
+    - name: Rename console-only wheels
+      if: ${{ matrix.VISUALISATION == 'OFF' }}
+      run: |
+        wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
+        for wheel_path in ${wheels_in}; do
+          wheel_dir=$(dirname "${wheel_path}")
+          wheel_name=$(basename "${wheel_path}")
+          wheel_name_out="${wheel_name//pycdga/pycdga-console}"
+          wheel_path_out="${wheel_dir}/${wheel_name_out}"
+          # Copy the wheel, renaming it
+          cp ${wheel_path} ${wheel_path_out}
+          echo "Copied ${wheel_path} to ${wheel_path_out}"
+        done
+
+    # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
+    - name: Upload Wheel Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheelhouse
+        path: ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/*.whl
+        if-no-files-found: error
+        retention-days: 7
+
+
+  # Create a draft release, if all other jobs are successful and if the workflow was triggered by a version tag push event.
+  create-draft-release:
+    needs: 
+      - build-ubuntu
+      - build-windows
+      - wheel-manylinux2014
+      - wheel-windows
+    if: ${{ success() && startsWith(github.ref, 'refs/tags/v') && github.event_name != 'workflow_dispatch' }}
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    # Download python wheels from previous jobs.
+    - name: Download Wheel Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: wheelhouse
+        path: wheelhouse
+
+    # Extract information from the tag which is required for the draft github release
+    - name: Process Tag
+      id: tag
+      run: |
+        ref=${{ github.ref }}
+        tag=${ref/refs\/tags\//}
+        version=${tag/v/}
+        prerelease_label=$(echo ${tag} | cut -d- -f2)
+        prerelease_label_len=$(echo ${prerelease_label} | wc -c)
+        prerelease_flag=$([[ -z "${prerelease_label_len}" ]] && echo "" || echo "--prerelease")
+        # set step outputs
+        echo "::set-output name=tag::${tag}"
+        echo "::set-output name=version::${version}"
+        echo "::set-output name=prerelease_flag::${prerelease_flag}"
+
+    # Use the gh cli tool to create a draft release
+    # @future - use --notes "notes string" or --notes-file file
+    # @future - label individual files via '/path/tofile#Display Label'
+    - name: Create Draft Release
+      id: create_release
+      run: |
+        gh release create --draft ${{ env.PRERELEASE_FLAG}} ${{ env.TAG }} --title "${{ env.TITLE }}" ${{ env.FILES }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PRERELEASE_FLAG: "${{ steps.tag.outputs.prerelease_flag }}"
+        TAG: "${{ steps.tag.outputs.tag }}"
+        TITLE: "CDGA ${{ steps.tag.outputs.version }}"
+        FILES: wheelhouse/*.whl

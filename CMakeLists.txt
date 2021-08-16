@@ -25,6 +25,35 @@ option(BUILD_TESTS "Enable building tests" OFF)
 option(BUILD_SWIG_PYTHON "Enable python bindings via SWIG" OFF)
 cmake_dependent_option(BUILD_SWIG_PYTHON_VENV "Enable the use of a venv for swig/python installation" ON "BUILD_SWIG_PYTHON" ON)
 
+# Set the C++/CUDA standard universally.
+set(CXXSTD 17)
+if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.0.0)
+    set(CXXSTD 14)
+endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.29)
+        # 17 required.
+        if(CXXSTD LESS 17)
+            message(FATAL_ERROR "MSVC >= 19.29 requires CMake >= 3.18 and CUDA >= 11.0")
+        endif()
+    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.11)
+        # 17 available?
+    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.10)
+        # use 14
+        set(CXXSTD 14)
+    endif()
+endif()
+
+set(CMAKE_CXX_EXTENSIONS OFF)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD ${CXXSTD})
+    set(CMAKE_CXX_STANDARD_REQUIRED true)
+endif()
+if(NOT DEFINED CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD ${CXXSTD})
+    set(CMAKE_CUDA_STANDARD_REQUIRED True)
+endif()
+
 
 add_subdirectory(src "${PROJECT_BINARY_DIR}/cdga")
 

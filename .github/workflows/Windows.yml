@@ -1,0 +1,71 @@
+# Compile project on Windows
+name: Windows
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      # explicit include-based build matrix, of known valid options
+      matrix:
+        include:
+          - os: windows-2019
+            cuda: "11.4.1"
+            cuda_arch: "35"
+            visual_studio: "Visual Studio 16 2019"
+    env:
+      BUILD_DIR: "build"
+      CONFIG: "Release"
+      BUILD_TESTS: "ON"
+      BUILD_SWIG_PYTHON: "ON"
+      VISUALISATION: "OFF"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install CUDA (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      shell: powershell
+      env:
+        cuda: ${{ matrix.cuda }}
+        visual_studio: ${{ matrix.visual_studio }}
+      run: .github\scripts\install_cuda_windows.ps1
+
+    - name: Configure cmake
+      run: >
+        cmake . -B ${{ env.BUILD_DIR }} 
+        -G "${{ matrix.visual_studio }}" -A x64 
+        -DCMAKE_WARN_DEPRECATED=OFF 
+        -DCUDA_ARCH="${{ matrix.cuda_arch }} "
+        -DBUILD_TESTS="${{ env.BUILD_TESTS }} "
+        -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}" 
+        -DPython3_ROOT_DIR="$(dirname $(which python))" 
+        -DPython3_EXECUTABLE="$(which python)"
+
+    - name: Build static library
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target cdga --verbose -j `nproc`
+
+    - name: Build python wheel
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target pycdga --verbose -j `nproc`
+
+    - name: Build tests
+      if: ${{ env.BUILD_TESTS == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target tests --verbose -j `nproc`
+
+    - name: Build all remaining targets
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --config ${{ env.CONFIG }} --target ALL_BUILD --verbose -j `nproc`

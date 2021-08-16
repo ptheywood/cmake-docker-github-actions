@@ -7,6 +7,10 @@ on:
       - '**'
   pull_request:
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -16,16 +20,19 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
+            cuda: "11.4"
+            cuda_arch: "52"
             gcc: 9
-            cuda: 11.4
           - os: ubuntu-18.04
+            cuda: "10.2"
+            cuda_arch: "52"
             gcc: 8
-            cuda: 10.2
     env:
-      build_dir: "build"
-      config: "Release"
-      build_tests: "ON"
-      build_swig_python: "ON"
+      BUILD_DIR: "build"
+      CONFIG: "Release"
+      BUILD_TESTS: "ON"
+      BUILD_SWIG_PYTHON: "ON"
+      VISUALISATION: "OFF"
 
     steps:
     - uses: actions/checkout@v2
@@ -33,47 +40,46 @@ jobs:
     - name: Install CUDA
       if: ${{ startswith(matrix.os, 'ubuntu') }}
       shell: bash
-      run: .github/scripts/install_cuda_ubuntu.sh
       env:
         cuda: ${{ matrix.cuda }}
+      run: .github/scripts/install_cuda_ubuntu.sh
 
-    # Specify the correct host compilers
     - name: Install/Select gcc and g++ 
       run: |
         sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
         echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
         echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
 
-    - name: install setuptools with an appropriate version
+    - name: Install python dependencies
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
       run: |
+        sudo apt-get install python3-venv
         python3 -m pip install --upgrade wheel
         python3 -m pip install --upgrade 'setuptools; python_version >= "3.6"' 'setuptools<51.3.0; python_version < "3.6" and python_version >= "3.0"'
 
-    - name: Install Python Venv
-      run: sudo apt-get install python3-venv
-
     - name: Configure cmake
-      run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DBUILD_TESTS=${{ env.build_tests }} -DCMAKE_WARN_DEPRECATED=OFF -DBUILD_SWIG_PYTHON=${{ env.build_swig_python }}
+      run: >
+        cmake . -B ${{ env.BUILD_DIR }}
+        -DCMAKE_BUILD_TYPE=${{ env.CONFIG }}
+        -DCMAKE_WARN_DEPRECATED=OFF 
+        -DCUDA_ARCH="${{ matrix.cuda_arch }} "
+        -DBUILD_TESTS="${{ env.BUILD_TESTS }} "
+        -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}"
 
     - name: Build static library
-      working-directory: ${{ env.build_dir }}
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --target cdga --verbose -j `nproc`
 
     - name: Build python wheel
-      working-directory: ${{ env.build_dir }}
+      if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --target pycdga --verbose -j `nproc`
 
     - name: Build tests
-      working-directory: ${{ env.build_dir }}
-      if: env.build_tests == 'ON'
+      if: ${{ env.BUILD_TESTS == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --target tests --verbose -j `nproc`
 
-    # - name: Run the c++ tests
-    #   working-directory: ${{ env.build_dir }}
-    #   run: ./bin/${{ env.config }}/tests
-
-    # - name: Run the python tests
-    #   working-directory: ${{ env.build_dir }}
-    #   run: |
-    #     source ./lib/${{ env.config }}/python/venv/bin/activate
-    #     python3 ../tests/swig/python/tests.py
+    - name: Build all remaining targets
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target all --verbose -j `nproc`
