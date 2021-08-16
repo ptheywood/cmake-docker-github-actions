@@ -71,7 +71,7 @@ jobs:
       shell: bash
       run: |
         yum install -y devtoolset-9
-        scl enable devtoolset-9 bash
+        source scl_source enable devtoolset-9 bash
         echo "PATH=${PATH}" >> $GITHUB_PATH
         echo "CC=$(which gcc)" >> $GITHUB_ENV
         echo "CXX=$(which g++)" >> $GITHUB_ENV
