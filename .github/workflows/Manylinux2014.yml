@@ -65,6 +65,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    # Downgrade the devtoolset in the image for older CUDA support. 
+    # Toolset 10 onyl works with CUDA >= 11.2
+    - name: Install RHEL devtoolset 
+      shell: bash
+      run: |
+        yum install -y devtoolset-9
+        scl enable devtoolset-9 bash
+
     # Install CUDA into the image.
     - name: Install CUDA (centos)
       shell: bash
