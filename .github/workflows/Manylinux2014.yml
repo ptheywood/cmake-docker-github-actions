@@ -66,6 +66,8 @@ jobs:
       # Control if we should create wheels claiming to be manylinux, even if they aren't
       # @todo - replace this option which actual auditwheel repair + dlopen + packaged .so
       RENAME_MANYLINUX: "OFF"
+      # Control if the wheel should be repaired. This will fail until .so's are addressed
+      AUDITWHEEL_REPAIR: "OFF"
       MANYLINUX: "manylinux2014"
       ARCH: "x86_64"
       # Define constants
@@ -139,9 +141,10 @@ jobs:
 
     # Ideally we should use auditwheel repair to check/enforce conformity
     # But we cannot due to cuda shared object (libcuda.so.1) dependencies which we cannot/shouldnot/wil not package into the wheel. 
-    # - name: Run auditwheel repair
-    #   working-directory: ${{ env.BUILD_DIR }}
-    #   run: auditwheel repair --plat ${{ env.MANYLINUX}}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
+    - name: Run auditwheel repair
+      if: ${{ env.AUDITWHEEL_REPAIR }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: auditwheel repair --plat ${{ env.MANYLINUX }}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
 
     # Instead, rename the wheel.
     # Wheels are not strictly manylinux complaint due to libcuda.so, so we shouldn't enable this really.
