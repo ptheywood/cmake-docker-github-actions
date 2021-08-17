@@ -52,7 +52,7 @@ jobs:
             config: "Release"
           - name: Slow
             SEATBELTS: "ON"
-            config: "Release"
+            CONFIG: "Release"
           # - name: Debug
           #   SEATBELTS: "ON"
           #   config: Debug
@@ -62,14 +62,13 @@ jobs:
     # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
     env:
       BUILD_DIR: "build"
-      CONFIG: "Release"
       BUILD_TESTS: "OFF"
       BUILD_SWIG_PYTHON: "ON"
 
       VISUALISATION: ${{ matrix.VISUALISATION }}
       compilers: ${{ matrix.compilers }}
       config: ${{ matrix.config }}
-      PYTHON: ${{ matrix.python }}
+      python: ${{ matrix.python }}
 
     # Name the build based on matrix/env options (but simplified?)
     name: build (${{ matrix.compilers.name }} ${{ matrix.config.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
