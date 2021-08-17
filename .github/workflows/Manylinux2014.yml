@@ -142,7 +142,7 @@ jobs:
     # Ideally we should use auditwheel repair to check/enforce conformity
     # But we cannot due to cuda shared object (libcuda.so.1) dependencies which we cannot/shouldnot/wil not package into the wheel. 
     - name: Run auditwheel repair
-      if: ${{ env.AUDITWHEEL_REPAIR }}
+      if: ${{ env.AUDITWHEEL_REPAIR == 'ON' }}
       working-directory: ${{ env.BUILD_DIR }}
       run: auditwheel repair --plat ${{ env.MANYLINUX }}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
 
