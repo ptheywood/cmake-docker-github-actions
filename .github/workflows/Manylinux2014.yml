@@ -146,28 +146,6 @@ jobs:
           echo "copied ${wheel_path} to ${wheel_path_out}"
         done
 
-    # Rename the wheel, embedding per-build matrix info.
-    # @todo - long term this should be handeled more gracefully within the python packaging during cmake.
-    - name: Rename wheels with build matrix information.
-      run: |
-        # Prep the new wheel name.
-        cuda=${{ matrix.cuda }}
-        label_cuda="-${cuda//./-}"
-        if [ "${{ env.VISUALISATION}}" ] ; then label_vis="-visualisation"; else label_vis=""; fi
-        package_name_in="pycdga"
-        package_name_out="pycdga${label_vis}${label_cuda}"
-        wheelhouse=${{ env.BUILD_DIR }}/wheelhouse
-        wheels_in=$(find ${wheelhouse} -name "*.whl")
-        for wheel_path in ${wheels_in}; do
-          wheel_dir=$(dirname "${wheel_path}")
-          wheel_name=$(basename "${wheel_path}")
-          wheel_name_out="${wheel_name//pycdga/${package_name_out}}"
-          wheel_path_out="${wheel_dir}/${wheel_name_out}"
-          # Move the wheel, renaming it
-          mv ${wheel_path} ${wheel_path_out}
-          echo "Moved ${wheel_path} to ${wheel_path_out}"
-        done
-
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
     - name: Upload Wheel Artifacts
       uses: actions/upload-artifact@v2
