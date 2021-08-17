@@ -30,6 +30,8 @@ endif()
 
 get_filename_component(ROOT ${CMAKE_CURRENT_LIST_DIR}/../.. REALPATH)
 
+find_package(CUDAToolkit REQUIRED) # CMake >= 3.17
+
 # Set the python module name, i.e. import <PYTHON_MODULE_NAME>
 set(PYTHON_MODULE_NAME pycdga)
 # Calcuulate the distribution name, for nameing wheels / python packages. This is subject to change.
@@ -108,7 +110,8 @@ endif()
 
 
 target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cdga)
-target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cuda)
+target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cudart)
+target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cuda_driver)
 if(MSVC)
   target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE ${Python3_LIBRARIES})
 endif()

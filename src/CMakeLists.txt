@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION VERSION 3.18 FATAL_ERROR)
 
 project(cdga CXX CUDA)
 
+find_package(CUDAToolkit REQUIRED) # CMake >= 3.17
+
 get_filename_component(ROOT ${CMAKE_CURRENT_LIST_DIR}/.. REALPATH)
 
 set(SRC_INCLUDE
@@ -29,4 +31,5 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(${PROJECT_NAME}  PUBLIC  "${ROOT}/include")
 target_include_directories(${PROJECT_NAME}  PRIVATE "${ROOT}/src")
 
-target_link_libraries(${PROJECT_NAME} PUBLIC cuda)
+target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cudart)
+target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cuda_driver)
