@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.cudacxx.os }}
     # container:
     #   image: quay.io/pypa/manylinux2014_x86_64
     strategy:
@@ -28,57 +28,37 @@ jobs:
       # + If vis is on/off. This might require explicit include? 
       # + Build config and SEATBELTS.        
 
-
       matrix:
-        name: [""]
-        os: ["ubuntu-20.04"]
-        py: [3.6, 3.7, 3.8, 3.9]
-        cuda: ["11.0", "11.2"]
-        # Excludes can be partial, excluding any jobs that match
-        exclude:
-          - py: 3.6
-            cuda: "11.0"
-          - py: 3.7
-        # Includes will add a job which only contain the parts mentioned. It will not be multiplied at all.
-        include: 
-          - os: "ubuntu-18.04"
-            py: 3.6
+        cudacxx:
+          - name: "CUDA 11.2"
+            cuda: "11.2"
+            cuda_arch: "52 60"
+            cxx: gcc-9
+            os: ubuntu-20.04
+          - name: "CUDA 10.0"
             cuda: "10.0"
-            
-
-
-        # CUDACXX:
-        #   - name: "CUDA 11.4"
-        #     cuda: "11.4"
-        #     cuda_arch: "52 60"
-        #     cxx: gcc-9
-        #     os: ubuntu-20.04
-        #   # - name: "CUDA 11.0"
-        #   #   cuda: "11.0"
-        #   #   cuda_arch: "52 60"
-        #   #   cxx: gcc-8
-        #   #   os: ubuntu-20.04
-        #   - name: "CUDA 10.0"
-        #     cuda: "10.0"
-        #     cuda_arch: "35"
-        #     cxx: gcc-7
-        #     os: ubuntu-18.04
-        # CONFIG:
-        #   - name: Fast
-        #     CONFIG: "Release"
-        #     SEATBELTS: "OFF"
-        #   - name: Release
-        #     CONFIG: "Release"
-        #     SEATBELTS: "ON"
-        #   # - name: Debug
-        #   #   CONFIG: Debug
-        #   #   SEATBELTS: "ON"
-        #   # VISUALISATION: "ON"
-        # python: [3.6, 3.7]
-        # VISUALISATION: ["ON", "OFF"]
+            cuda_arch: "35"
+            cxx: gcc-7
+            os: ubuntu-18.04
+        config:
+          - name: "Release"
+            config: "Release"
+            SEATBELTS: "ON"
+          # - name: "SEATBELTS=OFF"
+          #   config: "Release"
+          #   SEATBELTS: "OFF"
+          - name: "Debug"
+            config: "Debug"
+            SEATBELTS: "OFF"
+        python: 
+          - "3.6"
+          - "3.8"
+        VISUALISATION: 
+          - "ON"
+          - "OFF"
 
     # Name the build based on matrix/env options (but simplified?)
-    # name: build (${{ matrix.CUDACXX.name }} ${{ matrix.CONFIG.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
+    name: build (${{ matrix.cudacxx.name }} ${{ matrix.config.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
 
     # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
     env:
@@ -86,10 +66,17 @@ jobs:
       BUILD_TESTS: "OFF"
       BUILD_SWIG_PYTHON: "ON"
 
-      # VISUALISATION: ${{ matrix.VISUALISATION }}
-      # CUDACXX: ${{ toJSON(matrix.CUDACXX) }}
-      # config: ${{ matrix.config }}
-      # python: ${{ matrix.python }}
+      # Port matrix options to environment, for more portability.
+      cuda: ${{ matrix.cudacxx.cuda }}
+      cuda_arch: ${{ matrix.cudacxx.cuda_arch }}
+      cxx: ${{ matrix.cudacxx.cxx }}
+      CONFIG: ${{ matrix.config.config }}
+      SEATBELTS: ${{ matrix.config.SEATBELTS }}
+      python: ${{ matrix.python}}
+      VISUALISATION: ${{ matrix.VISUALISATION }}
+
+
+
 
 
 
@@ -105,6 +92,21 @@ jobs:
         print("arch {:} {:}".format(cuda, arch)) 
 
    
+    - name: Output job.
+      shell: bash
+      run: |
+        echo "${{ toJSON(job) }}"
+
+    - name: Output steps.
+      shell: bash
+      run: |
+        echo "${{ toJSON(steps) }}"
+
+    - name: Output runner.
+      shell: bash
+      run: |
+        echo "${{ toJSON(runner) }}"
+
     - name: Output Matrix.
       shell: bash
       run: |
