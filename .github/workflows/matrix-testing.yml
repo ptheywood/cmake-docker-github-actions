@@ -66,9 +66,9 @@ jobs:
       BUILD_SWIG_PYTHON: "ON"
 
       VISUALISATION: ${{ matrix.VISUALISATION }}
-      compilers: ${{ matrix.compilers }}
-      config: ${{ matrix.config }}
-      python: ${{ matrix.python }}
+      compilers: ${{ toJSON(matrix.compilers) }}
+      # config: ${{ matrix.config }}
+      # python: ${{ matrix.python }}
 
     # Name the build based on matrix/env options (but simplified?)
     name: build (${{ matrix.compilers.name }} ${{ matrix.config.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
