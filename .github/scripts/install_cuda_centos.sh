@@ -96,12 +96,14 @@ fi
 CUDA_PACKAGES=""
 for package in "${CUDA_PACKAGES_IN[@]}"
 do : 
-    # @todo This is not perfect. Should probably provide a separate list for diff versions
-    # cuda-compiler-X-Y if CUDA >= 9.1 else cuda-nvcc-X-Y
-    if [[ "${package}" == "nvcc" ]] && version_ge "$CUDA_VERSION_MAJOR_MINOR" "9.1" ; then
-        package="compiler"
-    elif [[ "${package}" == "compiler" ]] && version_lt "$CUDA_VERSION_MAJOR_MINOR" "9.1" ; then
-        package="nvcc"
+    # for centos 7, cuda-9.1 appears to be the earliest supported pacakge. cuda-nvcc- and cuda-compiler subpackages both exist.
+    # CUDA < 11, lib* packages were actaully cuda-cu* (generally, this might be greedy.)
+    if [[ ${package} == libcu* ]] && version_lt "$CUDA_VERSION_MAJOR_MINOR" "11.0" ; then
+        package="${package/libcu/cuda-cu}"
+    fi
+    # CUDA < 11, -devel- packages were actually -dev
+    if [[ ${package} == *devel* ]] && version_lt "$CUDA_VERSION_MAJOR_MINOR" "11.0" ; then
+        package="${package//devel/dev}"
     fi
     # Build the full package name and append to the string.
     CUDA_PACKAGES+=" ${package}-${CUDA_MAJOR}-${CUDA_MINOR}"
@@ -127,7 +129,7 @@ if (( $EUID == 0)); then
 fi
 # Find if sudo is available
 has_sudo=false
-if command -v sudo &> /dev/null ; then
+if [ command -v sudo &> /dev/null ] ; then
     has_sudo=true
 fi
 # Decide if we can proceed or not (root or sudo is required) and if so store whether sudo should be used or not. 

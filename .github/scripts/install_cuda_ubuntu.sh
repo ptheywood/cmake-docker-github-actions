@@ -100,10 +100,11 @@ do :
         package="cuda-compiler"
     elif [[ "${package}" == "cuda-compiler" ]] && version_lt "$CUDA_VERSION_MAJOR_MINOR" "9.1" ; then
         package="cuda-nvcc"
-    elif [[ ${package} == libcu* ]] && version_lt "$CUDA_VERSION_MAJOR_MINOR" "11.0" ; then
-        package="${package/libcu/cuda-cu}"
     fi
     # CUDA 11+ includes lib* / lib*-dev packages, which if they existed previously where cuda-cu*- / cuda-cu*-dev-
+    if [[ ${package} == libcu* ]] && version_lt "$CUDA_VERSION_MAJOR_MINOR" "11.0" ; then
+        package="${package/libcu/cuda-cu}"
+    fi
 
     # Build the full package name and append to the string.
     CUDA_PACKAGES+=" ${package}-${CUDA_MAJOR}-${CUDA_MINOR}"

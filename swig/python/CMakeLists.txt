@@ -2,13 +2,45 @@
 
 cmake_minimum_required(VERSION VERSION 3.18 FATAL_ERROR)
 
+# ------------------------------- @todo cmake/version.cmake
+# These would belong in cmake/version.cmake in the main repo.
 # @todo - get the version info from the header?
 set(CDGA_VERSION_PYTHON_PUBLIC "0.0.1")
+# Compute the local version, if requested.
+set(CDGA_VERSION_PYTHON_LOCAL "${CDGA_VERSION_PYTHON_PUBLIC}")
+# @todo - if FindCUDAToolkit is used, this could be massively simplified.
+string(REPLACE "." ";" CUDA_VERSION_LIST ${CMAKE_CUDA_COMPILER_VERSION})
+list(GET CUDA_VERSION_LIST 0 CUDA_VERSION_MAJOR)
+list(GET CUDA_VERSION_LIST 1 CUDA_VERSION_MINOR)
+set(CDGA_VERSION_PYTHON_LOCAL_SUFFIX "cuda${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}")
+unset(CUDA_VERSION_LIST)
+unset(CUDA_VERSION_MAJOR)
+unset(CUDA_VERSION_MINOR)
+if(NOT CDGA_VERSION_PYTHON_LOCAL_SUFFIX STREQUAL "")
+  set(CDGA_VERSION_PYTHON_LOCAL "${CDGA_VERSION_PYTHON_LOCAL}+${CDGA_VERSION_PYTHON_LOCAL_SUFFIX}")
+endif()
+unset(CDGA_VERSION_PYTHON_LOCAL_SUFFIX)
 
+# if the cmake option to embed local version is enabeld, do it.
+set(CDGA_VERSION_PYTHON ${CDGA_VERSION_PYTHON_PUBLIC})
+if(BUILD_SWIG_PYTHON_LOCALVERSION)
+  set(CDGA_VERSION_PYTHON ${CDGA_VERSION_PYTHON_LOCAL})
+endif()
+# ---------------------------------------
 
 get_filename_component(ROOT ${CMAKE_CURRENT_LIST_DIR}/../.. REALPATH)
 
-SET(PYTHON_MODULE_NAME pycdga)
+find_package(CUDAToolkit REQUIRED) # CMake >= 3.17
+
+# Set the python module name, i.e. import <PYTHON_MODULE_NAME>
+set(PYTHON_MODULE_NAME pycdga)
+# Calcuulate the distribution name, for nameing wheels / python packages. This is subject to change.
+set(PYTHON_DISTRIBUTION_NAME ${PYTHON_MODULE_NAME})
+# Visualisation is enabled  
+if(VISUALISATION)
+  set(PYTHON_DISTRIBUTION_NAME ${PYTHON_DISTRIBUTION_NAME}-visualisation)
+endif()
+# @todo - Embed seatbelts/Debug status?
 
 # Set the output directory where the wheel etc should be placed.
 # CMAKE 3.20 is required for byproducts contianing $<CONFIG> (i.e. multiconfig generators.) Workaround by only setting if supported, or usiing CMAKE_BUILD_TYPE for non-multi-generators.
@@ -78,7 +110,8 @@ endif()
 
 
 target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cdga)
-target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cuda)
+target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cudart)
+target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cuda_driver)
 if(MSVC)
   target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE ${Python3_LIBRARIES})
 endif()
@@ -209,16 +242,12 @@ endif()
 add_custom_command(TARGET ${PYTHON_MODULE_NAME} POST_BUILD
     # create venv
     COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
-
-    # Must not call it in a folder containing the setup.py otherwise pip call it
-    # (i.e. "python setup.py bdist") while we want to consume the wheel package
-    COMMAND ${VENV_PIP} install --force-reinstall --find-links=dist --no-index -U ${PYTHON_MODULE_NAME}
+    # Install the wheel from the dist dir. Specify a version incase the same build dir has been used for a previous build 
+    COMMAND ${VENV_PIP} install --force-reinstall --find-links=dist --no-index -U ${PYTHON_DISTRIBUTION_NAME}==${CDGA_VERSION_PYTHON}
     # install pytest
     COMMAND ${VENV_PIP} install pytest
     BYPRODUCTS ${VENV_BYPRODUCTS}
     # TODO: Add dependancy to ensure this post build step occurs after the previous post build step which builds the wheel
     WORKING_DIRECTORY ${PYTHON_LIB_OUTPUT_DIRECTORY})
-# TODO: Add tests (not supported by VS generator in CMAKE)
-#add_test(...)
 endif()
 

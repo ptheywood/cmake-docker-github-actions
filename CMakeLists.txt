@@ -19,11 +19,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
 # Export compile commands
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "Control the output of compile_commands.json")
 
+# use shared cudart for the CUDA language?
+set(CMAKE_CUDA_RUNTIME_LIBRARY shared)
+
 
 # CMake Options.
 option(BUILD_TESTS "Enable building tests" OFF)
 option(BUILD_SWIG_PYTHON "Enable python bindings via SWIG" OFF)
 cmake_dependent_option(BUILD_SWIG_PYTHON_VENV "Enable the use of a venv for swig/python installation" ON "BUILD_SWIG_PYTHON" ON)
+cmake_dependent_option(BUILD_SWIG_PYTHON_LOCALVERSION "Embed CUDA version for the build in the local information" ON "BUILD_SWIG_PYTHON" ON)
+option(VISUALISATION "Enable visualisation. Does nothing in cydga." OFF)
+
 
 # Set the C++/CUDA standard universally.
 set(CXXSTD 17)

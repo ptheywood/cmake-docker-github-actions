@@ -14,8 +14,8 @@ class InstallPlatlib(install):
         self.install_lib=self.install_platlib
 
 setup(
-  name='@PYTHON_MODULE_NAME@',
-  version='@CDGA_VERSION_PYTHON_PUBLIC@',
+  name='@PYTHON_DISTRIBUTION_NAME@',
+  version='@CDGA_VERSION_PYTHON@',
   author='Peter Heywood',
   url='https://github.com/ptheywood/cmake-docker-github-actions',
   distclass=BinaryDistribution,

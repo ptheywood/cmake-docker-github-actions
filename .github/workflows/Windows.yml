@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - '**'
+    paths:
+      - "**"
+      - "!.github/**"
+      - ".github/workflows/Windows.yml"
   pull_request:
 
 defaults:
@@ -13,44 +17,83 @@ defaults:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.cudacxx.os }}
     strategy:
       fail-fast: false
-      # explicit include-based build matrix, of known valid options
+      # Multiplicative build matrix
+      # optional exclude: can be partial, include: must be specific
       matrix:
-        include:
-          - os: windows-2019
-            cuda: "11.4.1"
+        cudacxx:
+          - cuda: "11.4.1"
             cuda_arch: "35"
-            visual_studio: "Visual Studio 16 2019"
+            hostcxx: "Visual Studio 16 2019"
+            os: windows-2019
+          - cuda: "11.0.3"
+            cuda_arch: "35"
+            hostcxx: "Visual Studio 16 2019"
+            os: windows-2019
+        python: 
+          # - "3.9"
+          - "3.8"
+          # - "3.7"
+          # - "3.6"
+        config:
+          - name: "Release"
+            config: "Release"
+            SEATBELTS: "ON"
+          # - name: "SEATBELTS=OFF"
+          #   config: "Release"
+          #   SEATBELTS: "OFF"
+          # - name: "Debug"
+          #   config: "Debug"
+          #   SEATBELTS: "OFF"
+        VISUALISATION: 
+          # - "ON"
+          - "OFF"
+
+    # Name the job based on matrix/env options
+    name: "build (${{ matrix.cudacxx.cuda }}, ${{matrix.python}}, ${{ matrix.VISUALISATION }}, ${{ matrix.config.name }}, ${{ matrix.cudacxx.os }})"
+
+    # Define job-wide env constants, and promote matrix elements to env constants for portable steps.
     env:
+      # Define constants
       BUILD_DIR: "build"
-      CONFIG: "Release"
-      BUILD_TESTS: "ON"
-      BUILD_SWIG_PYTHON: "ON"
-      VISUALISATION: "OFF"
+      BUILD_TESTS: "OFF"
+      # Conditional based on matrix via awkward almost ternary
+      BUILD_SWIG_PYTHON: ${{ fromJSON('{true:"ON",false:"OFF"}')[matrix.python != ''] }}
+      # Port matrix options to environment, for more portability.
+      CUDA: ${{ matrix.cudacxx.cuda }}
+      CUDA_ARCH: ${{ matrix.cudacxx.cuda_arch }}
+      HOSTCXX: ${{ matrix.cudacxx.hostcxx }}
+      OS: ${{ matrix.cudacxx.os }}
+      CONFIG: ${{ matrix.config.config }}
+      SEATBELTS: ${{ matrix.config.SEATBELTS }}
+      PYTHON: ${{ matrix.python}}
+      VISUALISATION: ${{ matrix.VISUALISATION }}
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Install CUDA (Windows)
-      if: ${{ runner.os == 'Windows' }}
+      if: ${{ runner.os == 'Windows' && env.CUDA != '' }}
       shell: powershell
       env:
-        cuda: ${{ matrix.cuda }}
-        visual_studio: ${{ matrix.visual_studio }}
+        cuda: ${{ env.CUDA }}
+        visual_studio: ${{ env.HOSTCXX }}
       run: .github\scripts\install_cuda_windows.ps1
 
+    # Must pass -G -A for windows, and -DPython3_ROOT_DIR/-DPYTHON3_EXECUTABLE as a github action workaround
     - name: Configure cmake
       run: >
-        cmake . -B ${{ env.BUILD_DIR }} 
-        -G "${{ matrix.visual_studio }}" -A x64 
+        cmake . -B "${{ env.BUILD_DIR }}" 
+        -G "${{ env.HOSTCXX }}" -A x64 
         -DCMAKE_WARN_DEPRECATED=OFF 
-        -DCUDA_ARCH="${{ matrix.cuda_arch }} "
+        -DCUDA_ARCH="${{ env.CUDA_ARCH }} "
         -DBUILD_TESTS="${{ env.BUILD_TESTS }} "
         -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}" 
         -DPython3_ROOT_DIR="$(dirname $(which python))" 
         -DPython3_EXECUTABLE="$(which python)"
+        -DVISUALISATION="${{ env.VISUALISATION }}"
 
     - name: Build static library
       working-directory: ${{ env.BUILD_DIR }}
