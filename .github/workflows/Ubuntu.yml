@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - '**'
+    paths:
+      - "**"
+      - "!.github/**"
+      - ".github/workflows/Ubuntu.yml"
   pull_request:
 
 defaults:
@@ -62,7 +66,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install CUDA
-      if: ${{ startswith(matrix.os, 'ubuntu') }}
+      if: ${{ startswith(matrix.os, 'ubuntu') && matrix.cuda != '' }}
       shell: bash
       env:
         cuda: ${{ matrix.cuda }}

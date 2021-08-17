@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - '**'
+    paths:
+      - "**"
+      - "!.github/**"
+      - ".github/workflows/Windows.yml"
   pull_request:
 
 defaults:
@@ -34,7 +38,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install CUDA (Windows)
-      if: ${{ runner.os == 'Windows' }}
+      if: ${{ runner.os == 'Windows' && matrix.cuda != '' }}
       shell: powershell
       env:
         cuda: ${{ matrix.cuda }}

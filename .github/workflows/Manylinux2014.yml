@@ -6,6 +6,10 @@ on:
   push:
     branches:
       - '**'
+    paths:
+      - "**"
+      - "!.github/**"
+      - ".github/workflows/Manylinux2014.yml"
   pull_request:
 
 # A single job, which builds manylinux2014 wheels, which ships with GCC 10.2.1 at the time of writing. If this bumps to unpatched 10.3 we might have issues w/ cuda. 
@@ -31,12 +35,12 @@ jobs:
             # cuda: "11.2"
             # cuda_arch: "52"
 
-          - python: "3.8"
-            cuda: "11.4"
-            cuda_arch: "52"
-          - python: "3.8"
-            cuda: "11.3"
-            cuda_arch: "52"
+          # - python: "3.8"
+          #   cuda: "11.4"
+          #   cuda_arch: "52"
+          # - python: "3.8"
+          #   cuda: "11.3"
+          #   cuda_arch: "52"
           - python: "3.8"
             cuda: "11.2"
             cuda_arch: "52"
@@ -49,12 +53,12 @@ jobs:
           - python: "3.8"
             cuda: "10.2"
             cuda_arch: "52"
-          - python: "3.8"
-            cuda: "10.1"
-            cuda_arch: "52"
-          - python: "3.8"
-            cuda: "10.0"
-            cuda_arch: "52"
+          # - python: "3.8"
+          #   cuda: "10.1"
+          #   cuda_arch: "52"
+          # - python: "3.8"
+          #   cuda: "10.0"
+          #   cuda_arch: "52"
     env:
       BUILD_DIR: "build"
       CONFIG: "Release"
@@ -87,6 +91,7 @@ jobs:
 
     # Install CUDA into the image.
     - name: Install CUDA (centos)
+      if: ${{ matrix.cuda != '' }}
       shell: bash
       env:
         cuda: ${{ matrix.cuda }}
