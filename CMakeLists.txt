@@ -19,6 +19,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
 # Export compile commands
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "Control the output of compile_commands.json")
 
+# use shared cudart for the CUDA language?
+set(CMAKE_CUDA_RUNTIME_LIBRARY shared)
+
 
 # CMake Options.
 option(BUILD_TESTS "Enable building tests" OFF)
