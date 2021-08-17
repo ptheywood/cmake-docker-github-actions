@@ -35,10 +35,12 @@ jobs:
             cuda: "11.4"
             cuda_arch: "52 60"
             cxx: gcc-9
-          - name: "CUDA 11.0"
-            cuda: "11.0"
-            cuda_arch: "52 60"
-            cxx: gcc-8
+            os: ubuntu-20.04
+          # - name: "CUDA 11.0"
+          #   cuda: "11.0"
+          #   cuda_arch: "52 60"
+          #   cxx: gcc-8
+          #   os: ubuntu-20.04
           - name: "CUDA 10.0"
             cuda: "10.0"
             cuda_arch: "35"
@@ -51,9 +53,9 @@ jobs:
           - name: Slow
             SEATBELTS: "ON"
             config: "Release"
-          - name: Debug
-            SEATBELTS: "ON"
-            config: Debug
+          # - name: Debug
+          #   SEATBELTS: "ON"
+          #   config: Debug
         python: [3.6, 3.7]
         VISUALISATION: ["ON", "OFF"]
 
@@ -67,6 +69,9 @@ jobs:
       BUILD_TESTS: "OFF"
       BUILD_SWIG_PYTHON: "ON"
       VISUALISATION: "OFF"
+
+    # Name the build based on matrix/env options (but simplified?)
+    name: build ${{ matrix.compilers.name }} ${{ matrix.configs.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}}
 
     steps:
     - uses: actions/checkout@v2
