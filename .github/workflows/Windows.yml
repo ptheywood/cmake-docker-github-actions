@@ -95,7 +95,6 @@ jobs:
         -DPython3_EXECUTABLE="$(which python)"
         -DVISUALISATION="${{ env.VISUALISATION }}"
 
-
     - name: Build static library
       working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --config ${{ env.CONFIG }} --target cdga --verbose -j `nproc`

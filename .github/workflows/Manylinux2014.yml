@@ -129,11 +129,6 @@ jobs:
       working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --target pycdga --verbose -j `nproc`
 
-    - name: Build tests
-      if: ${{ env.BUILD_TESTS == 'ON' }}
-      working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build . --target tests --verbose -j `nproc`
-
     # Run audithweel show for information, but do not repair.
     - name: Run auditwheel show
       working-directory: ${{ env.BUILD_DIR }}
