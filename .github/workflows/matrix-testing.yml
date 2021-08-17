@@ -59,10 +59,11 @@ jobs:
 
     # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
     env:
+      # Define constants
       BUILD_DIR: "build"
       BUILD_TESTS: "OFF"
-      # Conditional based on matrix via awkward almost ternary.
-      BUILD_SWIG_PYTHON: ${{ fromJSON('["ON", "OFF"]')[matrix.python != ''] }}
+      # Conditional based on matrix via awkward almost ternary, [false, true](bool)
+      BUILD_SWIG_PYTHON: ${{ fromJSON('["ON", "OFF"]')[matrix.python == ''] }}
       # Port matrix options to environment, for more portability.
       CUDA: ${{ matrix.cudacxx.cuda }}
       CUDA_ARCH: ${{ matrix.cudacxx.cuda_arch }}
