@@ -30,19 +30,20 @@ jobs:
 
 
       matrix:
-
+        name: [""]
         os: ["ubuntu-20.04"]
-        py: [3.6, 3.8, 3.9]
+        py: [3.6, 3.7, 3.8, 3.9]
         cuda: ["11.0", "11.2"]
         # Excludes can be partial, excluding any jobs that match
         exclude:
           - py: 3.6
             cuda: "11.0"
+          - py: 3.7
         # Includes will add a job which only contain the parts mentioned. It will not be multiplied at all.
         include: 
           - os: "ubuntu-18.04"
             py: 3.6
-            cuda: ["10.0", "10.2"]
+            cuda: "10.0"
             
 
 
