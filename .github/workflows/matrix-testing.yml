@@ -62,7 +62,7 @@ jobs:
       BUILD_DIR: "build"
       BUILD_TESTS: "OFF"
       # Conditional based on matrix via awkward almost ternary.
-      BUILD_SWIG_PYTHON: ${{ fromJSON(["ON", "OFF"])[matrix.python != ''] }}
+      BUILD_SWIG_PYTHON: ${{ fromJSON('["ON", "OFF"]')[matrix.python != ''] }}
       # Port matrix options to environment, for more portability.
       CUDA: ${{ matrix.cudacxx.cuda }}
       CUDA_ARCH: ${{ matrix.cudacxx.cuda_arch }}
