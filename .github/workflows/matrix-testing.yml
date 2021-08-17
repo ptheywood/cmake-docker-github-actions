@@ -99,10 +99,10 @@ jobs:
     - name: py select cuda_arch
       shell: python
       run: |
-        cuda = ${{ matrix.cuda }}
+        cuda = "${{ matrix.cuda }}"
         x = {"11.2": "60"}
         arch = x[cuda] if cuda in x else "35"
-        print(f"arch {cuda} {arch}") 
+        print("arch {:} {:}".format(cuda, arch)) 
 
    
     - name: Output Matrix.
