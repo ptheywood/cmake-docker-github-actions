@@ -36,7 +36,6 @@ jobs:
             hostcxx: gcc-7
             os: ubuntu-18.04
         python: 
-          - ""
           # - "3.9"
           - "3.8"
           # - "3.7"
