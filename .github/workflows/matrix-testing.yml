@@ -30,7 +30,7 @@ jobs:
 
 
       matrix:
-        compilers:
+        CUDACXX:
           - name: "CUDA 11.4"
             cuda: "11.4"
             cuda_arch: "52 60"
@@ -46,18 +46,22 @@ jobs:
             cuda_arch: "35"
             cxx: gcc-7
             os: ubuntu-18.04
-        config:
+        CONFIG:
           - name: Fast
-            SEATBELTS: "OFF"
-            config: "Release"
-          - name: Slow
-            SEATBELTS: "ON"
             CONFIG: "Release"
+            SEATBELTS: "OFF"
+          - name: Release
+            CONFIG: "Release"
+            SEATBELTS: "ON"
           # - name: Debug
+          #   CONFIG: Debug
           #   SEATBELTS: "ON"
-          #   config: Debug
+          # VISUALISATION: "ON"
         python: [3.6, 3.7]
         VISUALISATION: ["ON", "OFF"]
+
+    # Name the build based on matrix/env options (but simplified?)
+    name: build (${{ matrix.CUDACXX.name }} ${{ matrix.CONFIG.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
 
     # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
     env:
@@ -66,12 +70,11 @@ jobs:
       BUILD_SWIG_PYTHON: "ON"
 
       VISUALISATION: ${{ matrix.VISUALISATION }}
-      compilers: ${{ toJSON(matrix.compilers) }}
+      CUDACXX: ${{ toJSON(matrix.CUDACXX) }}
       # config: ${{ matrix.config }}
       # python: ${{ matrix.python }}
 
-    # Name the build based on matrix/env options (but simplified?)
-    name: build (${{ matrix.compilers.name }} ${{ matrix.config.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
+
 
     steps:
     - uses: actions/checkout@v2
