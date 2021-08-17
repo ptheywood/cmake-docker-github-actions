@@ -165,14 +165,26 @@ jobs:
       matrix:
         include:
           # @todo - python 3.6-3.9
-          # @todo - cuda 11.0
+          # @todo - Include the cuda version in wheel renames.
           - python: "3.8"
             cuda: "11.2"
             cuda_arch: "35 52 60 70 80"
+            cxx: devtoolset-9 
             VISUALISATION: "ON"
           - python: "3.8"
             cuda: "11.2"
             cuda_arch: "35 52 60 70 80"
+            cxx: devtoolset-9 
+            VISUALISATION: "OFF"
+          - python: "3.8"
+            cuda: "11.0"
+            cuda_arch: "35 52 60 70 80"
+            cxx: devtoolset-9 
+            VISUALISATION: "ON"
+          - python: "3.8"
+            cuda: "11.0"
+            cuda_arch: "35 52 60 70 80"
+            cxx: devtoolset-9 
             VISUALISATION: "OFF"
     env:
       BUILD_DIR: "build"

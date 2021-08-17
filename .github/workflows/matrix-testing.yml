@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.compilers.os }}
     # container:
     #   image: quay.io/pypa/manylinux2014_x86_64
     strategy:
@@ -46,7 +46,7 @@ jobs:
             cuda_arch: "35"
             cxx: gcc-7
             os: ubuntu-18.04
-        configs:
+        config:
           - name: Fast
             SEATBELTS: "OFF"
             config: "Release"
@@ -59,28 +59,34 @@ jobs:
         python: [3.6, 3.7]
         VISUALISATION: ["ON", "OFF"]
 
-
-        
-
-
+    # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
     env:
       BUILD_DIR: "build"
       CONFIG: "Release"
       BUILD_TESTS: "OFF"
       BUILD_SWIG_PYTHON: "ON"
-      VISUALISATION: "OFF"
+
+      VISUALISATION: ${{ matrix.VISUALISATION }}
+      compilers: ${{ matrix.compilers }}
+      config: ${{ matrix.config }}
+      PYTHON: ${{ matrix.python }}
 
     # Name the build based on matrix/env options (but simplified?)
-    name: build ${{ matrix.compilers.name }} ${{ matrix.configs.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}}
+    name: build (${{ matrix.compilers.name }} ${{ matrix.config.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
 
     steps:
     - uses: actions/checkout@v2
 
    
-    - name: Output Information.
+    - name: Output Matrix.
       shell: bash
       run: |
         echo "${{ toJSON(matrix) }}"
+
+    - name: Output Matrix.
+      shell: bash
+      run: |
+        echo "${{ toJSON(env) }}"
         
 
 
