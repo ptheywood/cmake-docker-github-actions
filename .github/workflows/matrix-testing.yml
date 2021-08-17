@@ -96,6 +96,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: py select cuda_arch
+      shell: python
+      run: |
+        cuda = ${{ matrix.cuda }}
+        x = {"11.2": "35"}
+        arch = x[cuda] if cuda in x
+        print("arch {cuda} {arch}") 
+
    
     - name: Output Matrix.
       shell: bash
