@@ -122,28 +122,27 @@ jobs:
       run: auditwheel show lib/${{ env.CONFIG }}/python/dist/*whl
 
     # Ideally we should use auditwheel repair to check/enforce conformity
-    # But we cannot due to cuda shared object dependencies which we cannot/shouldnot/willnot package into the wheel. 
-    - name: Run auditwheel repair
-      working-directory: ${{ env.BUILD_DIR }}
-      run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
+    # But we cannot due to cuda shared object (libcuda.so.1) dependencies which we cannot/shouldnot/wil not package into the wheel. 
+    # - name: Run auditwheel repair
+    #   working-directory: ${{ env.BUILD_DIR }}
+    #   run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
 
     # Instead, rename the wheel.
-    # Wheels are not strictly manylinux complaint due to libcuda.so.
-    # @todo - don't actually rename wheels if they aren't manylinux compliant? It's a bit of a lie. 
-    # - name: Mock auditwheel repair
-    #   if: ${{ env.RENAME_MANYLINUX == 'ON'}}
-    #   shell: bash
-    #   run: |
-    #     wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
-    #     for wheel_path in ${wheels_in}; do
-    #       wheel_dir=$(dirname "${wheel_path}")
-    #       wheel_name=$(basename "${wheel_path}")
-    #       wheel_name_out="${wheel_name//linux/manylinux2014}"
-    #       wheel_path_out="${wheel_dir}/${wheel_name_out}"
-    #       # Move the wheel, renaming it
-    #       mv ${wheel_path} ${wheel_path_out}
-    #       echo "Moved ${wheel_path} to ${wheel_path_out}"
-    #     done
+    # Wheels are not strictly manylinux complaint due to libcuda.so, so we shouldn't enable this really.
+    - name: Mock auditwheel repair
+      if: ${{ env.RENAME_MANYLINUX == 'ON'}}
+      shell: bash
+      run: |
+        wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
+        for wheel_path in ${wheels_in}; do
+          wheel_dir=$(dirname "${wheel_path}")
+          wheel_name=$(basename "${wheel_path}")
+          wheel_name_out="${wheel_name//linux/manylinux2014}"
+          wheel_path_out="${wheel_dir}/${wheel_name_out}"
+          # Move the wheel, renaming it
+          mv ${wheel_path} ${wheel_path_out}
+          echo "Moved ${wheel_path} to ${wheel_path_out}"
+        done
 
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
     - name: Upload Wheel Artifacts
