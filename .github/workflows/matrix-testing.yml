@@ -20,14 +20,7 @@ jobs:
     strategy:
       fail-fast: false
 
-      # Matrix needs to specify: 
-      # + OS?
-      # + Container?
-      # + CUDA version + cuda_arch as a pair, + host compiler (gcc / msvc version.)
-      # + python version
-      # + If vis is on/off. This might require explicit include? 
-      # + Build config and SEATBELTS.        
-
+      # Multiplicative build matrix. Excludes can be partial, addition include: must be specific.
       matrix:
         cudacxx:
           - cuda: "11.4"
@@ -42,6 +35,11 @@ jobs:
             cuda_arch: "35"
             cxx: gcc-7
             os: ubuntu-18.04
+        python: 
+          # - "3.9"
+          - "3.8"
+          # - "3.7"
+          # - "3.6"
         config:
           - name: "Release"
             config: "Release"
@@ -52,16 +50,11 @@ jobs:
           # - name: "Debug"
           #   config: "Debug"
           #   SEATBELTS: "OFF"
-        python: 
-          # - "3.9"
-          - "3.8"
-          # - "3.7"
-          # - "3.6"
         VISUALISATION: 
           - "ON"
           # - "OFF"
 
-    # Name the build based on matrix/env options (but simplified?)
+    # Name the build based on matrix/env options
     name: "build (${{ matrix.cudacxx.cuda }}, ${{matrix.python}}, ${{ matrix.VISUALISATION }}, ${{ matrix.config.name }})"
 
     # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
@@ -69,20 +62,14 @@ jobs:
       BUILD_DIR: "build"
       BUILD_TESTS: "OFF"
       BUILD_SWIG_PYTHON: "ON"
-
       # Port matrix options to environment, for more portability.
-      cuda: ${{ matrix.cudacxx.cuda }}
-      cuda_arch: ${{ matrix.cudacxx.cuda_arch }}
-      cxx: ${{ matrix.cudacxx.cxx }}
+      CUDA: ${{ matrix.cudacxx.cuda }}
+      CUDA_ARCH: ${{ matrix.cudacxx.cuda_arch }}
+      HOST_COMPILER: ${{ matrix.cudacxx.cxx }}
       CONFIG: ${{ matrix.config.config }}
       SEATBELTS: ${{ matrix.config.SEATBELTS }}
-      python: ${{ matrix.python}}
+      PYTHON: ${{ matrix.python}}
       VISUALISATION: ${{ matrix.VISUALISATION }}
-
-
-
-
-
 
     steps:
     - uses: actions/checkout@v2
@@ -90,36 +77,10 @@ jobs:
     - name: py select cuda_arch
       shell: python
       run: |
-        cuda = "${{ matrix.cuda }}"
+        cuda = "${{ env.cuda }}"
         x = {"11.2": "60"}
         arch = x[cuda] if cuda in x else "35"
         print("arch {:} {:}".format(cuda, arch)) 
-
-   
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJSON(github) }}
-      run: echo "$GITHUB_CONTEXT"
-    - name: Dump job context
-      env:
-        JOB_CONTEXT: ${{ toJSON(job) }}
-      run: echo "$JOB_CONTEXT"
-    - name: Dump steps context
-      env:
-        STEPS_CONTEXT: ${{ toJSON(steps) }}
-      run: echo "$STEPS_CONTEXT"
-    - name: Dump runner context
-      env:
-        RUNNER_CONTEXT: ${{ toJSON(runner) }}
-      run: echo "$RUNNER_CONTEXT"
-    - name: Dump strategy context
-      env:
-        STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
-      run: echo "$STRATEGY_CONTEXT"
-    - name: Dump matrix context
-      env:
-        MATRIX_CONTEXT: ${{ toJSON(matrix) }}
-      run: echo "$MATRIX_CONTEXT"
 
     - name: Output env.
       shell: bash
