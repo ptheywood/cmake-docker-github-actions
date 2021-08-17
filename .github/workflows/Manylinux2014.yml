@@ -60,6 +60,8 @@ jobs:
       BUILD_TESTS: "OFF"
       BUILD_SWIG_PYTHON: "ON"
       VISUALISATION: "OFF"
+      # Control if we should create wheels claiming to be manylinux, even if they aren't
+      RENAME_MANYLINUX: "OFF"
 
     steps:
     - uses: actions/checkout@v2
@@ -74,8 +76,6 @@ jobs:
       if: ${{ startsWith(matrix.cxx, 'devtoolset') }}
       shell: bash
       run: |
-        # This is way too aggy. @todo
-        rm -rf /opt/rh/devtoolset-10/
         # Install devtoolset-X
         yum install -y ${{ matrix.cxx }}
         # Enable the toolset via source not scl enable which doesn't get on with multi-step GHA 
@@ -123,34 +123,33 @@ jobs:
 
     # Ideally we should use auditwheel repair to check/enforce conformity
     # But we cannot due to cuda shared object dependencies which we cannot/shouldnot/willnot package into the wheel. 
-    # - name: Run auditwheel repair
-    #   working-directory: ${{ env.BUILD_DIR }}
-    #   run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.CONFIG }}/python/dist/*whl -w wheelhouse
+    - name: Run auditwheel repair
+      working-directory: ${{ env.BUILD_DIR }}
+      run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
 
     # Instead, rename the wheel.
     # Wheels are not strictly manylinux complaint due to libcuda.so.
     # @todo - don't actually rename wheels if they aren't manylinux compliant? It's a bit of a lie. 
-    - name: Mock auditwheel repair
-      shell: bash
-      run: |
-        wheelhouse=${{ env.BUILD_DIR }}/wheelhouse
-        mkdir -p ${wheelhouse}
-        wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
-        for wheel_path in ${wheels_in}; do
-          wheel_dir=$(dirname "${wheel_path}")
-          wheel_name=$(basename "${wheel_path}")
-          wheel_name_out="${wheel_name//linux/manylinux2014}"
-          wheel_path_out="${wheelhouse}/${wheel_name_out}"
-          # Copy the wheel, renaming it
-          cp ${wheel_path} ${wheel_path_out}
-          echo "copied ${wheel_path} to ${wheel_path_out}"
-        done
+    # - name: Mock auditwheel repair
+    #   if: ${{ env.RENAME_MANYLINUX == 'ON'}}
+    #   shell: bash
+    #   run: |
+    #     wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
+    #     for wheel_path in ${wheels_in}; do
+    #       wheel_dir=$(dirname "${wheel_path}")
+    #       wheel_name=$(basename "${wheel_path}")
+    #       wheel_name_out="${wheel_name//linux/manylinux2014}"
+    #       wheel_path_out="${wheel_dir}/${wheel_name_out}"
+    #       # Move the wheel, renaming it
+    #       mv ${wheel_path} ${wheel_path_out}
+    #       echo "Moved ${wheel_path} to ${wheel_path_out}"
+    #     done
 
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
     - name: Upload Wheel Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: wheelhouse
-        path: ${{ env.BUILD_DIR }}/wheelhouse/*.whl
+        path: ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/*.whl
         if-no-files-found: error
         retention-days: 7

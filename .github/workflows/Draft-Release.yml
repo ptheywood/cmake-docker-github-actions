@@ -233,36 +233,20 @@ jobs:
     # But we cannot due to cuda shared object dependencies which we cannot/shouldnot/willnot package into the wheel. 
     # - name: Run auditwheel repair
     #   working-directory: ${{ env.BUILD_DIR }}
-    #   run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.CONFIG }}/python/dist/*whl -w wheelhouse
+    #   run: auditwheel repair --plat manylinux2014_x86_64 lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
 
     # Instead, rename the wheel.
     # Wheels are not strictly manylinux complaint due to libcuda.so.
+    # @todo - don't actually rename wheels if they aren't manylinux compliant? It's a bit of a lie. 
     - name: Mock auditwheel repair
+      if: ${{ env.RENAME_MANYLINUX == 'ON'}}
       shell: bash
       run: |
-        wheelhouse=${{ env.BUILD_DIR }}/wheelhouse
-        mkdir -p ${wheelhouse}
         wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
-        for wheel_path in ${wheels_in}; do
-          wheel_name=$(basename "${wheel_path}")
-          wheel_name_out="${wheel_name//linux/manylinux2014}"
-          wheel_path_out="${wheelhouse}/${wheel_name_out}"
-          # Copy the wheel, renaming it
-          cp ${wheel_path} ${wheel_path_out}
-          echo "Copied ${wheel_path} to ${wheel_path_out}"
-        done
-
-    # Rename the wheel if VISUALISATION=OFF. 
-    # @todo - long term this should be handeled more gracefully within the python packaging during cmake.
-    - name: Rename console-only wheels
-      if: ${{ matrix.VISUALISATION == 'OFF' }}
-      run: |
-        wheelhouse=${{ env.BUILD_DIR }}/wheelhouse
-        wheels_in=$(find ${wheelhouse} -name "*.whl")
         for wheel_path in ${wheels_in}; do
           wheel_dir=$(dirname "${wheel_path}")
           wheel_name=$(basename "${wheel_path}")
-          wheel_name_out="${wheel_name//pycdga/pycdga-console}"
+          wheel_name_out="${wheel_name//linux/manylinux2014}"
           wheel_path_out="${wheel_dir}/${wheel_name_out}"
           # Move the wheel, renaming it
           mv ${wheel_path} ${wheel_path_out}
@@ -274,7 +258,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: wheelhouse
-        path: ${{ env.BUILD_DIR }}/wheelhouse/*.whl
+        path: ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/*.whl
         if-no-files-found: error
         retention-days: 7
 
@@ -340,22 +324,6 @@ jobs:
       if: ${{ env.BUILD_TESTS == 'ON' }}
       working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --config ${{ env.CONFIG }} --target tests --verbose -j `nproc`
-
-    # Rename the wheel if VISUALISATION=OFF. 
-    # @todo - long term this should be handeled more gracefully within the python packaging during cmake.
-    - name: Rename console-only wheels
-      if: ${{ matrix.VISUALISATION == 'OFF' }}
-      run: |
-        wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
-        for wheel_path in ${wheels_in}; do
-          wheel_dir=$(dirname "${wheel_path}")
-          wheel_name=$(basename "${wheel_path}")
-          wheel_name_out="${wheel_name//pycdga/pycdga-console}"
-          wheel_path_out="${wheel_dir}/${wheel_name_out}"
-          # Copy the wheel, renaming it
-          cp ${wheel_path} ${wheel_path_out}
-          echo "Copied ${wheel_path} to ${wheel_path_out}"
-        done
 
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
     - name: Upload Wheel Artifacts
