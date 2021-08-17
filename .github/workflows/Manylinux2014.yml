@@ -86,7 +86,7 @@ jobs:
         # This is way too aggy. @todo
         rm -rf /opt/rh/devtoolset-10/
         # Install devtoolset-X
-        yum install -y ${{ matrix.cxx }}}
+        yum install -y ${{ matrix.cxx }}
         # Enable the toolset via source not scl enable which doesn't get on with multi-step GHA 
         source /opt/rh/${{ matrix.cxx }}/enable
         # Export the new environment / compilers for subsequent steps.
