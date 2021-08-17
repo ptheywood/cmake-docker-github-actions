@@ -100,8 +100,8 @@ jobs:
       shell: python
       run: |
         cuda = ${{ matrix.cuda }}
-        x = {"11.2": "35"}
-        arch = x[cuda] if cuda in x
+        x = {"11.2": "60"}
+        arch = x[cuda] if cuda in x else "35"
         print("arch {cuda} {arch}") 
 
    
