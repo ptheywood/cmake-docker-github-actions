@@ -90,11 +90,10 @@ jobs:
         -DCUDA_ARCH="${{ env.CUDA_ARCH }} "
         -DBUILD_TESTS="${{ env.BUILD_TESTS }} "
         -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}" 
-        -DPYTHON3_EXACT_VERSION=${{ env.PYTHON }}
+        -DPython3_ROOT_DIR="$(dirname $(which python))" 
+        -DPython3_EXECUTABLE="$(which python)"
         -DVISUALISATION="${{ env.VISUALISATION }}"
 
-    # -DPython3_ROOT_DIR="$(dirname $(which python))" 
-    # -DPython3_EXECUTABLE="$(which python)"
 
     - name: Build static library
       working-directory: ${{ env.BUILD_DIR }}
