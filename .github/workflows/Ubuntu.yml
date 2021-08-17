@@ -84,10 +84,10 @@ jobs:
       if: ${{ startsWith(env.HOSTCXX, 'gcc-') }}
       run: |
         gcc_version=${HOSTCXX//gcc-/}
-        sudo apt-get install -y gcc-${{ gcc_version }} g++-${{ gcc_version }}
-        echo "CC=/usr/bin/gcc-${{ gcc_version }}" >> $GITHUB_ENV
-        echo "CXX=/usr/bin/g++-${{ gcc_version }}" >> $GITHUB_ENV
-        echo "CUDAHOSTCXX=/usr/bin/g++-${{ gcc_version }}" >> $GITHUB_ENV
+        sudo apt-get install -y gcc-${gcc_version} g++-${gcc_version}
+        echo "CC=/usr/bin/gcc-${gcc_version}" >> $GITHUB_ENV
+        echo "CXX=/usr/bin/g++-${gcc_version}" >> $GITHUB_ENV
+        echo "CUDAHOSTCXX=/usr/bin/g++-${gcc_version}" >> $GITHUB_ENV
 
     - name: Select Python
       if: ${{ env.PYTHON != '' && env.BUILD_SWIG_PYTHON == 'ON' }} 
