@@ -102,7 +102,7 @@ jobs:
         cuda = ${{ matrix.cuda }}
         x = {"11.2": "60"}
         arch = x[cuda] if cuda in x else "35"
-        print("arch {cuda} {arch}") 
+        print(f"arch {cuda} {arch}") 
 
    
     - name: Output Matrix.
