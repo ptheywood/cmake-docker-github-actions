@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.compilers.os }}
+    runs-on: ${{ matrix.os }}
     # container:
     #   image: quay.io/pypa/manylinux2014_x86_64
     strategy:
@@ -26,42 +26,51 @@ jobs:
       # + CUDA version + cuda_arch as a pair, + host compiler (gcc / msvc version.)
       # + python version
       # + If vis is on/off. This might require explicit include? 
-      # + Build config and SEATBELTS.
+      # + Build config and SEATBELTS.        
 
 
       matrix:
-        CUDACXX:
-          - name: "CUDA 11.4"
-            cuda: "11.4"
-            cuda_arch: "52 60"
-            cxx: gcc-9
-            os: ubuntu-20.04
-          # - name: "CUDA 11.0"
-          #   cuda: "11.0"
-          #   cuda_arch: "52 60"
-          #   cxx: gcc-8
-          #   os: ubuntu-20.04
-          - name: "CUDA 10.0"
-            cuda: "10.0"
-            cuda_arch: "35"
-            cxx: gcc-7
-            os: ubuntu-18.04
-        CONFIG:
-          - name: Fast
-            CONFIG: "Release"
-            SEATBELTS: "OFF"
-          - name: Release
-            CONFIG: "Release"
-            SEATBELTS: "ON"
-          # - name: Debug
-          #   CONFIG: Debug
-          #   SEATBELTS: "ON"
-          # VISUALISATION: "ON"
-        python: [3.6, 3.7]
-        VISUALISATION: ["ON", "OFF"]
+
+        py: [3.6, 3.8, 3.9]
+        os: ["ubuntu-20.04"]
+        cuda: ["11.0", "11.2"]
+        exclude:
+          - py: 3.6
+            os: "ubuntu-20.04"
+
+
+        # CUDACXX:
+        #   - name: "CUDA 11.4"
+        #     cuda: "11.4"
+        #     cuda_arch: "52 60"
+        #     cxx: gcc-9
+        #     os: ubuntu-20.04
+        #   # - name: "CUDA 11.0"
+        #   #   cuda: "11.0"
+        #   #   cuda_arch: "52 60"
+        #   #   cxx: gcc-8
+        #   #   os: ubuntu-20.04
+        #   - name: "CUDA 10.0"
+        #     cuda: "10.0"
+        #     cuda_arch: "35"
+        #     cxx: gcc-7
+        #     os: ubuntu-18.04
+        # CONFIG:
+        #   - name: Fast
+        #     CONFIG: "Release"
+        #     SEATBELTS: "OFF"
+        #   - name: Release
+        #     CONFIG: "Release"
+        #     SEATBELTS: "ON"
+        #   # - name: Debug
+        #   #   CONFIG: Debug
+        #   #   SEATBELTS: "ON"
+        #   # VISUALISATION: "ON"
+        # python: [3.6, 3.7]
+        # VISUALISATION: ["ON", "OFF"]
 
     # Name the build based on matrix/env options (but simplified?)
-    name: build (${{ matrix.CUDACXX.name }} ${{ matrix.CONFIG.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
+    # name: build (${{ matrix.CUDACXX.name }} ${{ matrix.CONFIG.name }} ${{matrix.python}} ${{ matrix.VISUALISATION}})
 
     # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
     env:
@@ -69,8 +78,8 @@ jobs:
       BUILD_TESTS: "OFF"
       BUILD_SWIG_PYTHON: "ON"
 
-      VISUALISATION: ${{ matrix.VISUALISATION }}
-      CUDACXX: ${{ toJSON(matrix.CUDACXX) }}
+      # VISUALISATION: ${{ matrix.VISUALISATION }}
+      # CUDACXX: ${{ toJSON(matrix.CUDACXX) }}
       # config: ${{ matrix.config }}
       # python: ${{ matrix.python }}
 
