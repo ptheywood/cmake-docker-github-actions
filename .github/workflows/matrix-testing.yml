@@ -41,8 +41,8 @@ jobs:
         # Includes will add a job which only contain the parts mentioned. It will not be multiplied at all.
         include: 
           - os: "ubuntu-18.04"
-            cuda: "10.0"
             py: 3.6
+            cuda: ["10.0", "10.2"]
             
 
 
