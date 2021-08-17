@@ -87,7 +87,26 @@ jobs:
         echo "CC=$(which gcc)" >> $GITHUB_ENV
         echo "CXX=$(which g++)" >> $GITHUB_ENV
         echo "CUDAHOSTCXX=$(which g++)" >> $GITHUB_ENV
+        # debugging
+        echo "PATH=${PATH}"
+        echo "LDDLIB=${PATH}"
+        echo "CC=${CC}"
+        echo "CXX=${CXX}"
+        echo "CUDAHOSTCXX=${CUDAHOSTCXX}"
+        which gcc
+        which g++
 
+
+
+    - name: Debugging
+      run: |
+        echo "PATH=${PATH}"
+        echo "LDDLIB=${PATH}"
+        echo "CC=${CC}"
+        echo "CXX=${CXX}"
+        echo "CUDAHOSTCXX=${CUDAHOSTCXX}"
+        which gcc
+        which g++
 
     # Install CUDA into the image.
     - name: Install CUDA (centos)
