@@ -6,9 +6,6 @@
 
 # yum install cuda-nvrtc-devel-11-4 cuda-compiler-11-4 cuda-cudart-devel-11-4 cuda-nvcc-11-4 cuda-nvrtc-11-4 cuda-nvtx-11-4 libcurand-devel-11-4 
 
-# @todo - apt repos/known supported versions?
-
-
 # List of sub-packages to install.
 # @todo - pass this in from outside the script? 
 # @todo - check the specified subpackages exist via apt pre-install?  apt-rdepends cuda-9-0 | grep "^cuda-"?
@@ -83,13 +80,6 @@ if [ -z ${CENTOS_MAJOR} ]; then
     exit 1
 fi
 
-
-## ---------------------------
-## GCC studio support check?
-## ---------------------------
-
-# @todo
-
 ## -------------------------------
 ## Select CUDA packages to install
 ## -------------------------------
@@ -133,7 +123,7 @@ if command -v sudo &> /dev/null ; then
     has_sudo=true
 fi
 # Decide if we can proceed or not (root or sudo is required) and if so store whether sudo should be used or not. 
-if [ "$is_root" = false && "$has_sudo" = false ] ; then 
+if [ "$is_root" = false ] && [ "$has_sudo" = false ]; then 
     echo "Root or sudo is required. Aborting."
     exit 1
 elif [ "$is_root" = false ] ; then
@@ -156,6 +146,7 @@ if [[ $? -ne 0 ]]; then
     echo "CUDA Installation Error."
     exit 1
 fi
+
 ## -----------------
 ## Set environment vars / vars to be propagated
 ## -----------------
@@ -168,7 +159,6 @@ export LD_LIBRARY_PATH="$CUDA_PATH/lib:$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="$CUDA_PATH/lib64:$LD_LIBRARY_PATH"
 # Check nvcc is now available.
 nvcc -V
-
 
 # If executed on github actions, make the appropriate echo statements to update the environment
 if [[ $GITHUB_ACTIONS ]]; then
