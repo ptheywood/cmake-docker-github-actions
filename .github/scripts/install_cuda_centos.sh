@@ -129,7 +129,7 @@ if (( $EUID == 0)); then
 fi
 # Find if sudo is available
 has_sudo=false
-if [ command -v sudo &> /dev/null ] ; then
+if command -v sudo &> /dev/null ; then
     has_sudo=true
 fi
 # Decide if we can proceed or not (root or sudo is required) and if so store whether sudo should be used or not. 
