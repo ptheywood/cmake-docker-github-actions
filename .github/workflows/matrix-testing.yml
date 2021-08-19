@@ -69,6 +69,8 @@ jobs:
       SEATBELTS: ${{ matrix.config.SEATBELTS }}
       PYTHON: ${{ matrix.python}}
       VISUALISATION: ${{ matrix.VISUALISATION }}
+      # Compute the wheelhouse name
+      ARTIFACT_NAME: wheelhouse-${{ env.OS }}-${{ env.CUDA }}-${{ env.CUDA_ARCH }}-${{ env.HOSTCXX }}-${{ env.CONFIG }}-${{ env.SEATBELTS }}-${{ env.PYTHON }}-${{ env.VISUALISATION }}
 
     steps:
     - uses: actions/checkout@v2
@@ -89,11 +91,7 @@ jobs:
     - name: Output possible wheelhouse names.
       shell: bash
       run: |
-        echo "0: ${{ toJSON(github.job) }}"
-        echo "1: ${{ github.job }}"
-        echo "2: ${{ toJSON(job) }}"
-        echo "3: ${{ toJSON(strategy) }}"
-        echo "4: ${{ toJSON(matrix) }}"
-        echo "5: ${{ env.CUDA }}-${{ env.CUDA_ARCH }}-${{ env.HOSTCXX }}-${{ env.OS }}-${{ env.CONFIG }}-${{ env.SEATBELTS }}-${{ env.PYTHON }}-${{ env.VISUALISATION }}"
+        echo "0: ${{ env.ARTIFACT_NAME }}"
+        echo "1: ${{ env.OS }}-${{ env.CUDA }}-${{ env.CUDA_ARCH }}-${{ env.HOSTCXX }}-${{ env.CONFIG }}-${{ env.SEATBELTS }}-${{ env.PYTHON }}-${{ env.VISUALISATION }}"
         
 
