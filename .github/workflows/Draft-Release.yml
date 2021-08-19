@@ -196,6 +196,12 @@ jobs:
         visual_studio: ${{ env.HOSTCXX }}
       run: .github\scripts\install_cuda_windows.ps1
 
+    - name: Select Python
+      if: ${{ env.PYTHON != '' && env.BUILD_SWIG_PYTHON == 'ON' }} 
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ env.PYTHON }}
+
     # Must pass -G -A for windows, and -DPython3_ROOT_DIR/-DPYTHON3_EXECUTABLE as a github action workaround
     - name: Configure cmake
       run: >
@@ -433,6 +439,12 @@ jobs:
         cuda: ${{ env.CUDA }}
         visual_studio: ${{ env.HOSTCXX }}
       run: .github\scripts\install_cuda_windows.ps1
+
+    - name: Select Python
+      if: ${{ env.PYTHON != '' && env.BUILD_SWIG_PYTHON == 'ON' }} 
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ env.PYTHON }}
 
     # Must pass -G -A for windows, and -DPython3_ROOT_DIR/-DPYTHON3_EXECUTABLE as a github action workaround
     - name: Configure cmake

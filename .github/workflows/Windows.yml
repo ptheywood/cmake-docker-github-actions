@@ -28,14 +28,14 @@ jobs:
             cuda_arch: "35"
             hostcxx: "Visual Studio 16 2019"
             os: windows-2019
-          - cuda: "11.0.3"
-            cuda_arch: "35"
-            hostcxx: "Visual Studio 16 2019"
-            os: windows-2019
+          # - cuda: "11.0.3"
+          #   cuda_arch: "35"
+          #   hostcxx: "Visual Studio 16 2019"
+          #   os: windows-2019
         python: 
           # - "3.9"
           - "3.8"
-          # - "3.7"
+          - "3.7"
           # - "3.6"
         config:
           - name: "Release"
@@ -82,6 +82,12 @@ jobs:
         visual_studio: ${{ env.HOSTCXX }}
       run: .github\scripts\install_cuda_windows.ps1
 
+    - name: Select Python
+      if: ${{ env.PYTHON != '' && env.BUILD_SWIG_PYTHON == 'ON' }} 
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ env.PYTHON }}
+
     # Must pass -G -A for windows, and -DPython3_ROOT_DIR/-DPYTHON3_EXECUTABLE as a github action workaround
     - name: Configure cmake
       run: >
@@ -112,3 +118,7 @@ jobs:
     - name: Build all remaining targets
       working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --config ${{ env.CONFIG }} --target ALL_BUILD --verbose -j `nproc`
+
+    - name: Output the wheel filename
+      working-directory: ${{ env.BUILD_DIR }}
+      run: ls lib/${{ env.CONFIG }}/python/dist/*.whl
