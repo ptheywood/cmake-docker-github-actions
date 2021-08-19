@@ -70,7 +70,7 @@ jobs:
       PYTHON: ${{ matrix.python}}
       VISUALISATION: ${{ matrix.VISUALISATION }}
       # Compute the wheelhouse name
-      ARTIFACT_NAME: wheelhouse-${{ env.OS }}-${{ env.CUDA }}-${{ env.CUDA_ARCH }}-${{ env.HOSTCXX }}-${{ env.CONFIG }}-${{ env.SEATBELTS }}-${{ env.PYTHON }}-${{ env.VISUALISATION }}
+      ARTIFACT_NAME: wheelhouse-${{ matrix.cudacxx.cuda }}-${{matrix.python}}-${{ matrix.VISUALISATION }}-${{ matrix.config.name }}-${{ matrix.cudacxx.os }}
 
     steps:
     - uses: actions/checkout@v2
