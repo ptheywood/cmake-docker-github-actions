@@ -11,84 +11,56 @@ on:
       - "!.github/**"
       - ".github/workflows/matrix-testing.yml"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
-  build:
-    runs-on: ${{ matrix.cudacxx.os }}
-    # container:
-    #   image: quay.io/pypa/manylinux2014_x86_64
-    strategy:
-      fail-fast: false
-      # Multiplicative build matrix
-      # optional exlclude: can be partial, include: must be specific
-      matrix:
-        cudacxx:
-          - cuda: "11.4"
-            cuda_arch: "35"
-            hostcxx: gcc-9
-            os: ubuntu-20.04
-          - cuda: "11.0"
-            cuda_arch: "35"
-            hostcxx: gcc-9
-            os: ubuntu-20.04
-          - cuda: "10.0"
-            cuda_arch: "35"
-            hostcxx: gcc-7
-            os: ubuntu-18.04
-        python: 
-          # - "3.9"
-          - "3.8"
-          # - "3.7"
-          # - "3.6"
-        config:
-          - name: "Release"
-            config: "Release"
-            SEATBELTS: "ON"
-          # - name: "SEATBELTS=OFF"
-          #   config: "Release"
-          #   SEATBELTS: "OFF"
-          # - name: "Debug"
-          #   config: "Debug"
-          #   SEATBELTS: "OFF"
-        VISUALISATION: 
-          - "ON"
-          # - "OFF"
-
-    # Name the build based on matrix/env options
-    name: "build (${{ matrix.cudacxx.cuda }}, ${{matrix.python}}, ${{ matrix.VISUALISATION }}, ${{ matrix.config.name }}, ${{ matrix.cudacxx.os }})"
-
-    # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
-    env:
-      # Define constants
-      BUILD_DIR: "build"
-      BUILD_TESTS: "OFF"
-      # Conditional based on matrix via awkward almost ternary
-      BUILD_SWIG_PYTHON: ${{ fromJSON('{true:"ON",false:"OFF"}')[matrix.python != ''] }}
-      # Port matrix options to environment, for more portability.
-      CUDA: ${{ matrix.cudacxx.cuda }}
-      CUDA_ARCH: ${{ matrix.cudacxx.cuda_arch }}
-      HOSTCXX: ${{ matrix.cudacxx.hostcxx }}
-      OS: ${{ matrix.cudacxx.os }}
-      CONFIG: ${{ matrix.config.config }}
-      SEATBELTS: ${{ matrix.config.SEATBELTS }}
-      PYTHON: ${{ matrix.python}}
-      VISUALISATION: ${{ matrix.VISUALISATION }}
-
+  public_or_push:
+    if: ${{ github.event.pull_request == null || github.event.pull_request.draft == false }}
+    runs-on: ubuntu-20.04
+    
     steps:
     - uses: actions/checkout@v2
 
-    - name: py select cuda_arch
-      shell: python
-      run: |
-        cuda = "${{ env.cuda }}"
-        x = {"11.2": "60"}
-        arch = x[cuda] if cuda in x else "35"
-        print("arch {:} {:}".format(cuda, arch)) 
-
-    - name: Output env.
+    - name: Output pr.
       shell: bash
       run: |
-        echo "${{ toJSON(env) }}"
-        
+        echo "${{ toJSON(github.event.pull_request) }}"
 
+  draft_or_push:
+    if: ${{ github.event.pull_request == null || github.event.pull_request.draft == true }}
+    runs-on: ubuntu-20.04
+    
+    steps:
+    - uses: actions/checkout@v2
 
+    - name: Output pr.
+      shell: bash
+      run: |
+        echo "${{ toJSON(github.event.pull_request) }}"
+
+  pr:
+    if: ${{ github.event.pull_request != null }}
+    runs-on: ubuntu-20.04
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Output pr.
+      shell: bash
+      run: |
+        echo "${{ toJSON(github.event.pull_request) }}"
+
+  always:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Output event.
+      shell: bash
+      run: |
+        echo "${{ toJSON(github.event) }}"
+
+    - name: Output pr.
+      shell: bash
+      run: |
+        echo "${{ toJSON(github.event.pull_request) }}"
