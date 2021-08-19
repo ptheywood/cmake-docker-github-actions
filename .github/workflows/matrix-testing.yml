@@ -92,6 +92,8 @@ jobs:
         echo "0: ${{ toJSON(github.job) }}"
         echo "1: ${{ github.job }}"
         echo "2: ${{ toJSON(job) }}"
+        echo "3: ${{ toJSON(strategy) }}"
+        echo "4: ${{ toJSON(matrix) }}"
+        echo "5: ${{ env.CUDA }}-${{ env.CUDA_ARCH }}-${{ env.HOSTCXX }}-${{ env.OS }}-${{ env.CONFIG }}-${{ env.SEATBELTS }}-${{ env.PYTHON }}-${{ env.VISUALISATION }}"
         
-
 
