@@ -125,3 +125,14 @@ jobs:
 
     - name: tree files
       run: tree ${{steps.download.outputs.download-path}}
+
+    - name: Find Wheels
+      id: find_wheels
+      run: |
+        # Output the tree of downloaded files for debugging 
+        tree ${{ steps.download.outputs.download-path }}
+        # Find files, storing in a variable
+        files=$(find ${{ steps.download.outputs.download-path }} -type f -name "*.whl")
+        echo "files: ${files}"
+        # Set the list of files as the output for this step
+        echo "::set-output name=files::${files}"
