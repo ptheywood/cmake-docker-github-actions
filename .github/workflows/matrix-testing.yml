@@ -12,6 +12,11 @@ on:
       - ".github/workflows/matrix-testing.yml"
   pull_request:
 
+defaults:
+  run:
+    # Default to using bash regardless of OS unless otherwise specified.
+    shell: bash
+
 jobs:
   build:
     runs-on: ${{ matrix.cudacxx.os }}
@@ -75,23 +80,48 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: py select cuda_arch
-      shell: python
-      run: |
-        cuda = "${{ env.cuda }}"
-        x = {"11.2": "60"}
-        arch = x[cuda] if cuda in x else "35"
-        print("arch {:} {:}".format(cuda, arch)) 
-
     - name: Output env.
       shell: bash
       run: |
         echo "${{ toJSON(env) }}"
 
-    - name: Output possible wheelhouse names.
-      shell: bash
+    - name: build mock wheel
       run: |
-        echo "0: ${{ env.ARTIFACT_NAME }}"
-        echo "1: ${{ env.OS }}-${{ env.CUDA }}-${{ env.CUDA_ARCH }}-${{ env.HOSTCXX }}-${{ env.CONFIG }}-${{ env.SEATBELTS }}-${{ env.PYTHON }}-${{ env.VISUALISATION }}"
-        
+        mkdir -p ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/
+        echo "${{ env.ARTIFACT_NAME }}" > ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/${{ env.ARTIFACT_NAME }}.whl
+        ls ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/
 
+    # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
+    # Use a unique name per job matrix run, to avoid a risk of corruption according to the docs (even though it works on simple examples.)
+    - name: Upload Wheel Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/*.whl
+        if-no-files-found: error
+        retention-days: 7
+
+
+  # Create a draft release, if all other jobs are successful and if the workflow was triggered by a version tag push event.
+  download:
+    needs: 
+      - build
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    # Download all artifacts from dependent jobs, by not specifying a name
+    - name: Download Wheel Artifacts
+      id: download
+      uses: actions/download-artifact@v2
+      with:
+        path: wheelhouse
+
+    - name: 'Echo download path'
+      run: echo ${{steps.download.outputs.download-path}}
+
+    - name: find files
+      run: find ${{steps.download.outputs.download-path}} -type f
+
+    - name: tree files
+      run: tree ${{steps.download.outputs.download-path}}
