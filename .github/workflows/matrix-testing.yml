@@ -15,7 +15,7 @@ on:
 
 jobs:
   public_or_push:
-    if: ${{ github.event.pull_request != null || github.event.pull_request.draft == false }}
+    if: ${{ github.event.pull_request == null || github.event.pull_request.draft == false }}
     runs-on: ubuntu-20.04
     
     steps:
@@ -27,7 +27,7 @@ jobs:
         echo "${{ toJSON(github.event.pull_request) }}"
 
   draft_or_push:
-    if: ${{ github.event.pull_request != null || github.event.pull_request.draft == true }}
+    if: ${{ github.event.pull_request == null || github.event.pull_request.draft == true }}
     runs-on: ubuntu-20.04
     
     steps:
