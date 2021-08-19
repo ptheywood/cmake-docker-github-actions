@@ -136,3 +136,9 @@ jobs:
         echo "files: ${files}"
         # Set the list of files as the output for this step
         echo "::set-output name=files::${files}"
+
+    - name: Test find_wheels output
+      run: |
+        echo "files:"
+        echo "${{ steps.find_wheels.outputs.files }}" 
+        echo "/files"
