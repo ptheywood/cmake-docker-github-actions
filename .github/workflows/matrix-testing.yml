@@ -140,7 +140,6 @@ jobs:
           files="${files} \"${f}#${label}\""
         done
         echo "files: ${files}"
-        echo "files: ${files}"
         # Set the list of files as the output for this step
         echo "::set-output name=files::${files}"
 

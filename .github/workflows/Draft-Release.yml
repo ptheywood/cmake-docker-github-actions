@@ -285,6 +285,8 @@ jobs:
       SEATBELTS: ${{ matrix.config.SEATBELTS }}
       PYTHON: ${{ matrix.python}}
       VISUALISATION: ${{ matrix.VISUALISATION }}
+      # Compute the wheelhouse name which should be unique within the matrix.
+      ARTIFACT_NAME: wheelhouse-${{ matrix.cudacxx.cuda }}-${{matrix.python}}-${{ matrix.VISUALISATION }}-${{ matrix.config.name }}-${{ matrix.cudacxx.os }}
 
     steps:
     - uses: actions/checkout@v2
@@ -359,10 +361,11 @@ jobs:
         done
 
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
+    # Use a unique name per job matrix run, to avoid a risk of corruption according to the docs (even though it works on simple examples.)
     - name: Upload Wheel Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: wheelhouse
+        name: ${{ env.ARTIFACT_NAME }}
         path: ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/*.whl
         if-no-files-found: error
         retention-days: 7
@@ -417,6 +420,8 @@ jobs:
       SEATBELTS: ${{ matrix.config.SEATBELTS }}
       PYTHON: ${{ matrix.python}}
       VISUALISATION: ${{ matrix.VISUALISATION }}
+      # Compute the wheelhouse name which should be unique within the matrix.
+      ARTIFACT_NAME: wheelhouse-${{ matrix.cudacxx.cuda }}-${{matrix.python}}-${{ matrix.VISUALISATION }}-${{ matrix.config.name }}-${{ matrix.cudacxx.os }}
 
     steps:
     - uses: actions/checkout@v2
@@ -448,10 +453,11 @@ jobs:
       run: cmake --build . --config ${{ env.CONFIG }} --target pycdga --verbose -j `nproc`
 
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
+    # Use a unique name per job matrix run, to avoid a risk of corruption according to the docs (even though it works on simple examples.)
     - name: Upload Wheel Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: wheelhouse
+        name: ${{ env.ARTIFACT_NAME }}
         path: ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/*.whl
         if-no-files-found: error
         retention-days: 7
@@ -469,12 +475,29 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Download python wheels from previous jobs.
+    # Download all artifacts from dependent jobs, by not specifying a name
     - name: Download Wheel Artifacts
+      id: download
       uses: actions/download-artifact@v2
       with:
-        name: wheelhouse
         path: wheelhouse
+
+    - name: Find Wheels
+      id: find_wheels
+      run: |
+        # Output the tree of downloaded files for debugging 
+        tree ${{ steps.download.outputs.download-path }}
+        # Find files, storing in a variable
+        pattern="${{ steps.download.outputs.download-path }}/*/*.whl"
+        files=""
+        for f in ${pattern}; do
+          # @future - Set actual display label
+          label="$(basename ${f})"
+          files="${files} \"${f}#${label}\""
+        done
+        echo "files: ${files}"
+        # Set the list of files as the output for this step
+        echo "::set-output name=files::${files}"
 
     # Extract information from the tag which is required for the draft github release
     - name: Process Tag
@@ -493,14 +516,12 @@ jobs:
 
     # Use the gh cli tool to create a draft release
     # @future - use --notes "notes string" or --notes-file file
-    # @future - label individual files via '/path/tofile#Display Label'
     - name: Create Draft Release
       id: create_release
-      run: |
-        gh release create --draft ${{ env.PRERELEASE_FLAG}} ${{ env.TAG }} --title "${{ env.TITLE }}" ${{ env.FILES }}
+      run: gh release create --draft ${{ env.PRERELEASE_FLAG}} --title "${{ env.TITLE }}" ${{ env.TAG }} ${{ env.FILES }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PRERELEASE_FLAG: "${{ steps.tag.outputs.prerelease_flag }}"
         TAG: "${{ steps.tag.outputs.tag }}"
-        TITLE: "CDGA ${{ steps.tag.outputs.version }}"
-        FILES: wheelhouse/*.whl
+        TITLE: "${{ steps.tag.outputs.version }}"
+        FILES: ${{ steps.find_wheels.outputs.files }}
