@@ -132,7 +132,14 @@ jobs:
         # Output the tree of downloaded files for debugging 
         tree ${{ steps.download.outputs.download-path }}
         # Find files, storing in a variable
-        files=$(find ${{ steps.download.outputs.download-path }} -type f -name "*.whl")
+        pattern="${{ steps.download.outputs.download-path }}/*/*.whl"
+        files=""
+        for f in ${pattern}; do
+          # @todo - set display label if desired
+          label="$(basename ${f}).label"
+          files="${files} \"${f}#${label}\""
+        done
+        echo "files: ${files}"
         echo "files: ${files}"
         # Set the list of files as the output for this step
         echo "::set-output name=files::${files}"
