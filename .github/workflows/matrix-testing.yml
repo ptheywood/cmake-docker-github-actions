@@ -51,7 +51,7 @@ jobs:
           # - "OFF"
 
     # Name the build based on matrix/env options
-    name: "${{ github.job }} (${{ matrix.cudacxx.cuda }}, ${{matrix.python}}, ${{ matrix.VISUALISATION }}, ${{ matrix.config.name }}, ${{ matrix.cudacxx.os }})"
+    name: build (${{ matrix.cudacxx.cuda }}, ${{matrix.python}}, ${{ matrix.VISUALISATION }}, ${{ matrix.config.name }}, ${{ matrix.cudacxx.os }})"
 
     # Explicitly define env bits, AND promote matrix components to the env, for more portable steps between jobs.
     env:
