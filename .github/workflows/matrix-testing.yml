@@ -38,17 +38,17 @@ jobs:
   #     run: |
   #       echo "${{ toJSON(github.event.pull_request) }}"
 
-  # pr:
-  #   if: ${{ github.event.pull_request }}
-  #   runs-on: ubuntu-20.04
+  pr:
+    if: ${{ github.event.pull_request != null }}
+    runs-on: ubuntu-20.04
     
-  #   steps:
-  #   - uses: actions/checkout@v2
+    steps:
+    - uses: actions/checkout@v2
 
-  #   - name: Output pr.
-  #     shell: bash
-  #     run: |
-  #       echo "${{ toJSON(github.event.pull_request) }}"
+    - name: Output pr.
+      shell: bash
+      run: |
+        echo "${{ toJSON(github.event.pull_request) }}"
 
   always:
     runs-on: ubuntu-20.04
