@@ -19,9 +19,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
 # Export compile commands
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "Control the output of compile_commands.json")
 
-# use shared cudart for the CUDA language?
-set(CMAKE_CUDA_RUNTIME_LIBRARY shared)
-
 
 # CMake Options.
 option(BUILD_TESTS "Enable building tests" OFF)
@@ -30,6 +27,12 @@ cmake_dependent_option(BUILD_SWIG_PYTHON_VENV "Enable the use of a venv for swig
 cmake_dependent_option(BUILD_SWIG_PYTHON_LOCALVERSION "Embed CUDA version for the build in the local information" ON "BUILD_SWIG_PYTHON" ON)
 option(VISUALISATION "Enable visualisation. Does nothing in cydga." OFF)
 
+option(USE_DLOPEN "Use dlopen under linux for cuda runtime libraries. Required for manylinux compliance." OFF)
+
+# When using CUDA as a language, libcuart is linked statically by default. 
+# From CMake 3.18, this can be configured to be Shared,Static or None instead. 
+# @todo - shared/static if not dlopen, none if dlopen is being used for cudart.
+set(CMAKE_CUDA_RUNTIME_LIBRARY shared)
 
 # Set the C++/CUDA standard universally.
 set(CXXSTD 17)
