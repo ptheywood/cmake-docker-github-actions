@@ -27,12 +27,22 @@ cmake_dependent_option(BUILD_SWIG_PYTHON_VENV "Enable the use of a venv for swig
 cmake_dependent_option(BUILD_SWIG_PYTHON_LOCALVERSION "Embed CUDA version for the build in the local information" ON "BUILD_SWIG_PYTHON" ON)
 option(VISUALISATION "Enable visualisation. Does nothing in cydga." OFF)
 
-option(USE_DLOPEN "Use dlopen under linux for cuda runtime libraries. Required for manylinux compliance." OFF)
+option(USE_DLOPEN_CUDA "Use dlopen under linux for cuda libraries. Required for manylinux compliance." OFF)
+
+if(WIN32 AND USE_DLOPEN_CUDA)
+    # @todo - remove this if adding windows dlopen support
+    message(FATAL_ERROR "USE_DLOPEN_CUDA is only supported on Linux. Please reconfigure with -DUSE_DLOPEN_CUDA=OFF")
+endif()
+
 
 # When using CUDA as a language, libcuart is linked statically by default. 
 # From CMake 3.18, this can be configured to be Shared,Static or None instead. 
-# @todo - shared/static if not dlopen, none if dlopen is being used for cudart.
-set(CMAKE_CUDA_RUNTIME_LIBRARY shared)
+if(NOT USE_DLOPEN_CUDA)
+    # @todo - shared/static if not dlopen, none if dlopen is being used for cudart.
+    set(CMAKE_CUDA_RUNTIME_LIBRARY shared)
+else()
+    set(CMAKE_CUDA_RUNTIME_LIBRARY shared) # @todo - this should be none, but then need to resolve linker errors?
+endif()
 
 # Set the C++/CUDA standard universally.
 set(CXXSTD 17)
@@ -62,7 +72,6 @@ if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD ${CXXSTD})
     set(CMAKE_CUDA_STANDARD_REQUIRED True)
 endif()
-
 
 add_subdirectory(src "${PROJECT_BINARY_DIR}/cdga")
 
