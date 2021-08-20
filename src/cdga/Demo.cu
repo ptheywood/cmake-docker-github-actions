@@ -4,7 +4,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#if defined(USE_DLOPEN_CUDA)
+// If Using dlopen, include the appropraite header. This is only currently implemented for linux.
+#if defined(USE_DLOPEN_CUDA) !defined(_MSC_VER)
     #include <dlfcn.h>
 #else 
 #include <cuda.h>
