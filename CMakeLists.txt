@@ -41,7 +41,7 @@ if(NOT USE_DLOPEN_CUDA)
     # @todo - shared/static if not dlopen, none if dlopen is being used for cudart.
     set(CMAKE_CUDA_RUNTIME_LIBRARY shared)
 else()
-    set(CMAKE_CUDA_RUNTIME_LIBRARY shared) # @todo - this should be none, but then need to resolve linker errors?
+    set(CMAKE_CUDA_RUNTIME_LIBRARY static) # @todo - this should be none once cudart is wrapped.
 endif()
 
 # Set the C++/CUDA standard universally.

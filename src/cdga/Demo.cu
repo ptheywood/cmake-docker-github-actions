@@ -24,9 +24,8 @@ __global__ void demoKernel(unsigned int count) {
         printf("Thread %u of %u: count = %u\n", idx, total, count);
     }
 }
-
-
 void Demo::demo() {
+
     this->count++;
 
     // Initialise a runtime cuda context on the default device.

@@ -16,6 +16,7 @@ set(SRC_INCLUDE
 set(SRC
     ${ROOT}/src/cdga/detail/DSOStuff.cpp
     ${ROOT}/src/cdga/detail/libcuda_stub.cu
+    ${ROOT}/src/cdga/detail/libcudart_stub.cu
     ${ROOT}/src/cdga/Demo.cu
     ${ROOT}/src/cdga/version.cpp
 )
