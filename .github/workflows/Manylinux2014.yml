@@ -67,7 +67,7 @@ jobs:
       # @todo - replace this option which actual auditwheel repair + dlopen + packaged .so
       RENAME_MANYLINUX: "OFF"
       # Control if the wheel should be repaired. This will fail until .so's are addressed
-      AUDITWHEEL_REPAIR: "OFF"
+      AUDITWHEEL_REPAIR: "ON"
       MANYLINUX: "manylinux2014"
       ARCH: "x86_64"
       # Define constants
@@ -113,6 +113,7 @@ jobs:
         cuda: ${{ env.CUDA }}
       run: .github/scripts/install_cuda_centos.sh
 
+    # Configure with dlopen=on to allow manylinux compliance.
     - name: Configure cmake
       run: >
         cmake . -B "${{ env.BUILD_DIR }}"
@@ -123,6 +124,7 @@ jobs:
         -DBUILD_SWIG_PYTHON="${{ env.BUILD_SWIG_PYTHON }}"
         -DPYTHON3_EXACT_VERSION=${{ env.PYTHON }}
         -DVISUALISATION="${{ env.VISUALISATION }}"
+        -DUSE_DLOPEN_CUDA="ON"
 
     - name: Build python wheel
       if: ${{ env.BUILD_SWIG_PYTHON == 'ON' }}
