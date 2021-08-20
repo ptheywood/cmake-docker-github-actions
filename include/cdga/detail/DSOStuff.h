@@ -16,8 +16,8 @@
     #endif  // _MSC_VER
 #endif  // USE_DLOPEN
 
-// C++17 namespace statements are great.
-namespace cdga::detail {
+namespace cdga {
+namespace detail {
 
 // @todo - this is a terrible name
 // Class for loading symbols from dynamic shared objects. 
@@ -84,6 +84,7 @@ public:
 #endif
 };
 
-}  // namespace cdga::detail
+}  // namespace detail
+}  // namespace cdga
 
 #endif //  INCLUDE_CDGA_DETAIL_DSOSTUFF_H_

@@ -1,6 +1,8 @@
 #include "cdga/detail/DSOStuff.h"
 
-namespace cdga::detail {
+namespace cdga {
+namespace detail {
 
 
+}  // namespace detail
 }  // namespace cdga
