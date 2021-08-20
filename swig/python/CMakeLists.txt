@@ -110,8 +110,9 @@ endif()
 
 
 target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE cdga)
-target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cudart)
-target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cuda_driver)
+# These are inherrited from cdga
+# target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cudart)
+# target_link_libraries(${PYTHON_MODULE_NAME} PUBLIC CUDA::cuda_driver)
 if(MSVC)
   target_link_libraries(${PYTHON_MODULE_NAME} PRIVATE ${Python3_LIBRARIES})
 endif()
