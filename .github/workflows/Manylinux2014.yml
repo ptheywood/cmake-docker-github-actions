@@ -10,7 +10,7 @@ on:
       - "**"
       - "!.github/**"
       - ".github/workflows/Manylinux2014.yml"
-  pull_request:
+  # pull_request:
 
 defaults:
   run:

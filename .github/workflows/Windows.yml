@@ -9,7 +9,7 @@ on:
       - "**"
       - "!.github/**"
       - ".github/workflows/Windows.yml"
-  pull_request:
+  # pull_request:
 
 defaults:
   run:
