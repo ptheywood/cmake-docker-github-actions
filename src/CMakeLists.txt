@@ -7,14 +7,16 @@ find_package(CUDAToolkit REQUIRED) # CMake >= 3.17
 get_filename_component(ROOT ${CMAKE_CURRENT_LIST_DIR}/.. REALPATH)
 
 set(SRC_INCLUDE
-    ${ROOT}/include/cdga/version.h
-    ${ROOT}/include/cdga/Demo.h
+    ${ROOT}/include/cdga/detail/DSOStuff.h
     ${ROOT}/include/cdga/cdga.h
+    ${ROOT}/include/cdga/Demo.h
+    ${ROOT}/include/cdga/version.h
 )
 
 set(SRC
-    ${ROOT}/src/cdga/version.cpp
+    ${ROOT}/src/cdga/detail/DSOStuff.cpp
     ${ROOT}/src/cdga/Demo.cu
+    ${ROOT}/src/cdga/version.cpp
 )
 
 set(ALL_SRC
