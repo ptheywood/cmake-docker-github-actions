@@ -27,24 +27,6 @@ __global__ void demoKernel(unsigned int count) {
 
 
 void Demo::demo() {
-
-
-    // dlopen testing. This would want separating / doing much nicer.
-    #if defined(USE_DLOPEN_CUDA)
-
-    void * libcuda_handle = detail::DSOStuff::OpenLibraryHandle("libcuda.so.1");
-    if (libcuda_handle == nullptr) {
-        fprintf(stderr, "Bad stuff happened. @todo \n");
-        exit(EXIT_FAILURE);
-    }
-    // Load required libcuda.so methods. If any fail to load, this will exit, so no need to check the result with the current implementation
-    
-    CUresult (*cuCtxGetCurrent)( CUcontext* );
-    CUresult (*cuGetErrorString)( CUresult, const char** );
-
-    cuCtxGetCurrent = (CUresult (*)( CUcontext* )) detail::DSOStuff::SymbolFromLibrary(libcuda_handle, "cuCtxGetCurrent");
-    cuGetErrorString = (CUresult (*)( CUresult, const char** )) detail::DSOStuff::SymbolFromLibrary(libcuda_handle, "cuGetErrorString");
-    #endif
     this->count++;
 
     // Initialise a runtime cuda context on the default device.
@@ -70,14 +52,6 @@ void Demo::demo() {
     if (status != cudaSuccess) {
         fprintf(stderr, "Error: Cuda Error %s at %s::%d\n", cudaGetErrorString(status), __FILE__, __LINE__);
     }
-
-    // @todo move this and do it nicer. 
-    #if defined(USE_DLOPEN_CUDA)
-        // Close the handle.
-        if(libcuda_handle) {
-            detail::DSOStuff::CloseLibraryHandle(&libcuda_handle);
-        }
-    #endif
 
 }
 

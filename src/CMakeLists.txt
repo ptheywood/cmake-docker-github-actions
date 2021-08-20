@@ -15,6 +15,7 @@ set(SRC_INCLUDE
 
 set(SRC
     ${ROOT}/src/cdga/detail/DSOStuff.cpp
+    ${ROOT}/src/cdga/detail/libcuda_stub.cu
     ${ROOT}/src/cdga/Demo.cu
     ${ROOT}/src/cdga/version.cpp
 )
@@ -34,8 +35,9 @@ target_include_directories(${PROJECT_NAME}  PUBLIC  "${ROOT}/include")
 target_include_directories(${PROJECT_NAME}  PRIVATE "${ROOT}/src")
 
 # If DLOPEN is being used for cuda, set a target definintion
-target_compile_definitions(${PROJECT_NAME} PRIVATE "USE_DLOPEN_CUDA")
-
+if(USE_DLOPEN_CUDA)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE "USE_DLOPEN_CUDA")
+endif()
 # No need to link against CUDA::cudart or CUDA::cudart_static as we are using the CUDA CMake project language.
 # target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cudart)
 

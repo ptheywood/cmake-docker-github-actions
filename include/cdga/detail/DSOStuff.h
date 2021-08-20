@@ -5,10 +5,6 @@
 #include <cstdlib>  // for exit / EXIT_FAILURE
 #include <stdio.h>  // fpritnf
 
-#ifndef USE_DLOPEN_CUDA // @temp
-#define USE_DLOPEN_CUDA // @temp
-#endif // @temp
-
 // If Using dlopen, include the appropriate header. 
 // This is only currently implemented for linux.
 #if defined(USE_DLOPEN_CUDA)
@@ -81,15 +77,11 @@ public:
     }
 
 
+    // Static method to load everything we want from a given library? 
+
 #else 
     // @todo windows support
 #endif
-
-
-    // Not sure what these will be used for yet
-    DSOStuff();
-    ~DSOStuff();
-private:
 };
 
 }  // namespace cdga::detail
