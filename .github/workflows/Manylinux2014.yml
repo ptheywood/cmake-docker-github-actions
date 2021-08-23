@@ -32,14 +32,14 @@ jobs:
             cuda_arch: "35"
             hostcxx: devtoolset-9
             os: ubuntu-20.04
-          - cuda: "11.0"
-            cuda_arch: "35"
-            hostcxx: devtoolset-9
-            os: ubuntu-20.04
-          - cuda: "10.0"
-            cuda_arch: "35"
-            hostcxx: devtoolset-7
-            os: ubuntu-18.04
+          # - cuda: "11.0"
+          #   cuda_arch: "35"
+          #   hostcxx: devtoolset-9
+          #   os: ubuntu-20.04
+          # - cuda: "10.0"
+          #   cuda_arch: "35"
+          #   hostcxx: devtoolset-7
+          #   os: ubuntu-18.04
         python: 
           # - "3.9"
           - "3.8"
@@ -56,16 +56,13 @@ jobs:
           #   config: "Debug"
           #   SEATBELTS: "OFF"
         VISUALISATION: 
-          - "ON"
+          # - "ON"
           - "OFF"
 
     # Name the job based on matrix/env options
     name: "build (${{ matrix.cudacxx.cuda }}, ${{matrix.python}}, ${{ matrix.VISUALISATION }}, ${{ matrix.config.name }}, ${{ matrix.cudacxx.os }})"
 
     env:
-      # Control if we should create wheels claiming to be manylinux, even if they aren't
-      # @todo - replace this option which actual auditwheel repair + dlopen + packaged .so
-      RENAME_MANYLINUX: "OFF"
       # Control if the wheel should be repaired. This will fail until .so's are addressed
       AUDITWHEEL_REPAIR: "OFF"
       MANYLINUX: "manylinux2014"
@@ -132,30 +129,87 @@ jobs:
     # Run audithweel show for information, but do not repair.
     - name: Run auditwheel show
       working-directory: ${{ env.BUILD_DIR }}
-      run: auditwheel show lib/${{ env.CONFIG }}/python/dist/*whl
+      run: auditwheel show lib/${{ env.CONFIG }}/python/dist/*.whl
+
+    # Manually extract the wheel, and use patchelf to remove the dependnce on libcuda.so, before repackaging the wheel. 
+    - name: Temp Remove cuda .so dependencies
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        # Grab the first (hopefully only) wheel in the directory.
+        wheelpath=$(find lib/Release/python/dist/ -name "*.whl" | head -n 1)
+        # Extract the wheel into a temp dir.
+        extracted_dir=extracted
+        unzip -o ${wheelpath} -d ${extracted_dir}
+        # Switch into the extracted directory
+        pushd ${extracted_dir}
+        # Find the .so 
+        sofile=$(find . -name "_*.so" | head -n 1)
+        # List needed .so's 
+        patchelf --print-needed ${sofile}
+        # Patchelf to remove libcuda.so
+        # @todo - make this dynamic
+        patchelf --remove-needed libcuda.so.1 ${sofile}
+        # Remove libcudart.so @todo, version specific/dynamic
+        patchelf --remove-needed libcudart.so.${{ env.CUDA }} ${sofile}
+        # List updated list of needed .so's 
+        patchelf --print-needed ${sofile}
+        # Repackage the wheel.
+        wheelname=$(basename ${wheelpath})
+        zip -r ${wheelname} *
+        # Pop out the directory
+        popd
+        # Move the mutated wheel
+        mv ${extracted_dir}/${wheelname} ${wheelpath}
+        # Clean up the extracted dir
+        rm -r ${extracted_dir}
+
+    # Run autdithweel repair on the modified wheel to package non cuda .so files. 
+    # Ise --no-update-tags to not rename the file? 
+    - name: Run auditwheel repair
+      if: ${{ env.AUDITWHEEL_REPAIR == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: auditwheel repair --plat ${{ env.MANYLINUX }}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*whl --no-update-tags -w lib/${{ env.CONFIG }}/python/dist 
+    
+    # Manually re-add cuda libraries to the wheel. 
+    - name: Temp Remove cuda .so dependencies
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        # Grab the first (hopefully only) wheel in the directory.
+        wheelpath=$(find lib/Release/python/dist/ -name "*.whl" | head -n 1)
+        # Extract the wheel into a temp dir.
+        extracted_dir=extracted
+        unzip -o ${wheelpath} -d ${extracted_dir}
+        # Switch into the extracted directory
+        pushd ${extracted_dir}
+        # Find the .so 
+        sofile=$(find . -name "_*.so" | head -n 1)
+        # List needed .so's 
+        patchelf --print-needed ${sofile}
+        # Patchelf to add libcuda.so
+        # @todo - make this dynamic
+        patchelf --add-needed libcuda.so.1 ${sofile}
+        # Remove libcudart.so @todo, version specific.
+        patchelf --add-needed libcudart.so.${{ env.CUDA }} ${sofile}
+        # List updated list of needed .so's 
+        patchelf --print-needed ${sofile}
+        # Repackage the wheel.
+        wheelname=$(basename ${wheelpath})
+        zip -r ${wheelname} *
+        # Pop out the directory
+        popd
+        # Move the mutated wheel
+        mv ${extracted_dir}/${wheelname} ${wheelpath}
+        # Clean up the extracted dir
+        rm -r ${extracted_dir}
+
 
     # Ideally we should use auditwheel repair to check/enforce conformity
     # But we cannot due to cuda shared object (libcuda.so.1) dependencies which we cannot/shouldnot/wil not package into the wheel. 
     - name: Run auditwheel repair
       if: ${{ env.AUDITWHEEL_REPAIR == 'ON' }}
       working-directory: ${{ env.BUILD_DIR }}
-      run: auditwheel repair --plat ${{ env.MANYLINUX }}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*whl -w lib/${{ env.CONFIG }}/python/dist
+      run: auditwheel repair --plat ${{ env.MANYLINUX }}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*.whl -w lib/${{ env.CONFIG }}/python/dist
 
-    # Instead, rename the wheel.
-    # Wheels are not strictly manylinux complaint due to libcuda.so, so we shouldn't enable this really.
-    - name: Mock auditwheel repair
-      if: ${{ env.RENAME_MANYLINUX == 'ON'}}
-      run: |
-        wheels_in=$(find ${{ env.BUILD_DIR }}/lib/${{ env.CONFIG }}/python/dist/ -name "*.whl")
-        for wheel_path in ${wheels_in}; do
-          wheel_dir=$(dirname "${wheel_path}")
-          wheel_name=$(basename "${wheel_path}")
-          wheel_name_out="${wheel_name//linux/${{ env.MANYLINUX }}}"
-          wheel_path_out="${wheel_dir}/${wheel_name_out}"
-          # Move the wheel, renaming it
-          mv ${wheel_path} ${wheel_path_out}
-          echo "Moved ${wheel_path} to ${wheel_path_out}"
-        done
 
     # Upload wheel artifacts to the job on GHA, for a very short duration. This might not be desirable in practice.
     - name: Upload Wheel Artifacts
