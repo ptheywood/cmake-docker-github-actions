@@ -132,9 +132,15 @@ jobs:
       run: auditwheel show lib/${{ env.CONFIG }}/python/dist/*.whl
 
     # Manually extract the wheel, and use patchelf to remove the dependnce on libcuda.so, before repackaging the wheel. 
-    - name: Temp Remove cuda .so dependencies
+    - name: patchelf remove, auditwheel repair, patchelff add
       working-directory: ${{ env.BUILD_DIR }}
       run: |
+        # Setup list of .so's to remove then re-add
+        so_to_remove=( libcuda.so libcudart.so )
+        so_to_readd=()
+        ###########
+        # Remove cuda .so dependencies
+        ###########
         # Grab the first (hopefully only) wheel in the directory.
         wheelpath=$(find lib/Release/python/dist/ -name "*.whl" | head -n 1)
         # Extract the wheel into a temp dir.
@@ -146,11 +152,13 @@ jobs:
         sofile=$(find . -name "_*.so" | head -n 1)
         # List needed .so's 
         patchelf --print-needed ${sofile}
-        # Patchelf to remove libcuda.so
-        # @todo - make this dynamic
-        patchelf --remove-needed libcuda.so.1 ${sofile}
-        # Remove libcudart.so @todo, version specific/dynamic
-        patchelf --remove-needed libcudart.so.${{ env.CUDA }} ${sofile}
+        # Remove .so via patchelf, remembering the actual soname
+        for sopattern in "${so_to_remove}"; do
+            soname=$(ldd ${sofile} | grep ${sopattern} | sed -e 's/^[[:space:]]*//' | cut -d " " -f 1 | head -n 1)
+            echo "removing ${soname}"
+            patchelf --remove-needed ${soname} ${sofile}
+            so_to_readd+=($soname)
+        done
         # List updated list of needed .so's 
         patchelf --print-needed ${sofile}
         # Repackage the wheel.
@@ -163,17 +171,17 @@ jobs:
         # Clean up the extracted dir
         rm -r ${extracted_dir}
 
-    # Run autdithweel repair on the modified wheel to package non cuda .so files. 
-    # Ise --no-update-tags to not rename the file? 
-    - name: Run auditwheel repair
-      if: ${{ env.AUDITWHEEL_REPAIR == 'ON' }}
-      working-directory: ${{ env.BUILD_DIR }}
-      run: auditwheel repair --plat ${{ env.MANYLINUX }}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*whl --no-update-tags -w lib/${{ env.CONFIG }}/python/dist 
+
+        ###########
+        # Package non-cuda .so dependencies
+        ###########
+        # Run auditwheel repair
+        auditwheel repair --plat ${{ env.MANYLINUX }}_${{ env.ARCH }} lib/${{ env.CONFIG }}/python/dist/*whl --no-update-tags -w lib/${{ env.CONFIG }}/python/dist 
     
-    # Manually re-add cuda libraries to the wheel. 
-    - name: Temp Remove cuda .so dependencies
-      working-directory: ${{ env.BUILD_DIR }}
-      run: |
+
+        ###########
+        # re-add cuda .so dependencies
+        ###########
         # Grab the first (hopefully only) wheel in the directory.
         wheelpath=$(find lib/Release/python/dist/ -name "*.whl" | head -n 1)
         # Extract the wheel into a temp dir.
@@ -185,11 +193,11 @@ jobs:
         sofile=$(find . -name "_*.so" | head -n 1)
         # List needed .so's 
         patchelf --print-needed ${sofile}
-        # Patchelf to add libcuda.so
-        # @todo - make this dynamic
-        patchelf --add-needed libcuda.so.1 ${sofile}
-        # Remove libcudart.so @todo, version specific.
-        patchelf --add-needed libcudart.so.${{ env.CUDA }} ${sofile}
+        # Re-add .so via patchelf
+        for soname in "${so_to_readd}"; do
+            echo "re-adding ${soname}"
+            patchelf --add-needed ${soname} ${sofile}
+        done
         # List updated list of needed .so's 
         patchelf --print-needed ${sofile}
         # Repackage the wheel.
